@@ -1,0 +1,224 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// 1. Multi-Tenant & User Entities
+// ==========================================
+
+enum UserRole {
+  SUPERADMIN
+  ADMIN
+  USER
+}
+
+model Tenant {
+  id            String         @id @default(uuid())
+  name          String
+  slug          String         @unique
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  // Relations
+  members       TenantMember[]
+  subscription  Subscription?
+  tendersSaved  SavedTender[]
+  alerts        KeywordAlert[]
+  invoices      Invoice[]
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String?        // Nullable for OAuth accounts
+  name          String?
+  avatarUrl     String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  // Relations
+  tenantMembers TenantMember[]
+}
+
+model TenantMember {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+}
+
+// ==========================================
+// 2. Subscription Management
+// ==========================================
+
+enum SubscriptionTier {
+  FREE_TRIAL
+  PRO
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+model Subscription {
+  id        String             @id @default(uuid())
+  tenantId  String             @unique
+  tier      SubscriptionTier   @default(FREE_TRIAL)
+  status    SubscriptionStatus @default(ACTIVE)
+  expiresAt DateTime
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  // Relations
+  tenant    Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model Invoice {
+  id              String         @id @default(uuid())
+  tenantId        String
+  amount          Decimal        @db.Decimal(12, 2)
+  status          String         // e.g. "PENDING", "PAID", "EXPIRED", "FAILED"
+  midtransOrderId String         @unique
+  midtransSnapToken String?
+  paidAt          DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relations
+  tenant          Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+// ==========================================
+// 3. LPSE Tenders
+// ==========================================
+
+enum TenderStage {
+  PENGUMUMAN
+  KUALIFIKASI
+  PROPOSAL_SUBMISSION
+  EVALUASI
+  NEGOSIASI
+  SELESAI
+  BATAL
+}
+
+enum TenderCategory {
+  IT_SERVICES
+  CONSTRUCTION
+  GOODS_PROCUREMENT
+  CONSULTING
+  MAINTENANCE_SERVICES
+  OTHER
+}
+
+model Tender {
+  id             String         @id @default(uuid())
+  lpseId         String         @unique // Extracted LPSE reference number
+  title          String
+  agency         String         // Instansi (e.g. Kementerian PU, Pemprov DKI)
+  pagu           Decimal        @db.Decimal(15, 2) // Project Budget Allocation
+  hps            Decimal        @db.Decimal(15, 2) // Owner's Estimate (Harga Perkiraan Sendiri)
+  category       TenderCategory @default(OTHER)
+  stage          TenderStage    @default(PENGUMUMAN)
+  location       String         // e.g. DKI Jakarta, Jawa Barat
+  rawHtml        String?        @db.Text // Raw crawled webpage for safety/audit
+  aiSummary      Json?          // Structured Gemini analysis (Deadlines, eligibility, etc.)
+  publishedAt    DateTime
+  deadlineAt     DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  // Relations
+  savedByTenants SavedTender[]
+}
+
+// ==========================================
+// 4. Alerts & Monitored Tenders
+// ==========================================
+
+model SavedTender {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenderId  String
+  createdAt DateTime @default(now())
+
+  // Relations
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tender    Tender   @relation(fields: [tenderId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, tenderId])
+}
+
+model KeywordAlert {
+  id             String                @id @default(uuid())
+  tenantId       String
+  keyword        String                // e.g., "Software Development", "Pekerjaan Aspal"
+  channels       NotificationChannel[] // Enum array of notification pathways
+  telegramChatId String?               // Optional custom recipient info
+  emailAddress   String?               // Optional custom override
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  // Relations
+  tenant         Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+enum NotificationChannel {
+  EMAIL
+  TELEGRAM
+  WEB_DASHBOARD
+}
+
+// ==========================================
+// 5. Audits & Platform Logs
+// ==========================================
+
+model NotificationLog {
+  id             String              @id @default(uuid())
+  alertId        String?
+  tenantId       String
+  channel        NotificationChannel
+  recipient      String              // Target email, ChatId, etc.
+  message        String              @db.Text
+  deliveryStatus String              // e.g. "SENT", "FAILED", "PENDING"
+  errorMessage   String?             @db.Text
+  sentAt         DateTime            @default(now())
+}
+
+enum ScraperStatus {
+  SUCCESS
+  PARTIAL_FAILURE
+  CRITICAL_FAILURE
+  RUNNING
+}
+
+model ScraperLog {
+  id           String        @id @default(uuid())
+  crawlerName  String        // e.g. "LPSE_DKI_JAKARTA"
+  status       ScraperStatus
+  itemsCrawled Int           @default(0)
+  errorMessage String?       @db.Text
+  startedAt    DateTime
+  endedAt      DateTime?
+  createdAt    DateTime      @default(now())
+}

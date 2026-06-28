@@ -1,0 +1,23 @@
+{
+  "name": "tenderlens-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Multi-tenant procurement intelligence platform for Indonesian government tenders (LPSE)",
+  "workspaces": [
+    "apps/backend",
+    "apps/frontend",
+    "packages/database"
+  ],
+  "scripts": {
+    "dev:backend": "npm run start:dev --workspace=apps/backend",
+    "dev:frontend": "npm run dev --workspace=apps/frontend",
+    "db:generate": "prisma generate --schema=packages/database/prisma/schema.prisma",
+    "db:push": "prisma db push --schema=packages/database/prisma/schema.prisma",
+    "build:backend": "npm run build --workspace=apps/backend",
+    "build:frontend": "npm run build --workspace=apps/frontend",
+    "install:all": "npm install"
+  },
+  "devDependencies": {
+    "prisma": "^5.14.0"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "@tenderlens/database",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "dependencies": {
+    "@prisma/client": "^5.14.0"
+  }
+}
