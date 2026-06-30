@@ -99,60 +99,87 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing section */}
-      <section id="pricing" className="max-w-5xl mx-auto px-6 py-20 border-t border-neutral-900 space-y-12">
+      <section id="pricing" className="max-w-7xl mx-auto px-6 py-20 border-t border-neutral-900 space-y-12">
         <div className="text-center space-y-2">
           <h2 className="text-2xl font-bold text-white">Investasi yang Mempercepat Growth Anda</h2>
           <p className="text-neutral-500 text-xs">Pilih paket lisensi terbaik sesuai dengan skala perusahaan Anda.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-          {/* Free plan */}
-          <div className="p-8 rounded-xl border border-neutral-800 bg-[#0c0c0e]/50 flex flex-col justify-between space-y-6">
-            <div className="space-y-4">
-              <span className="text-[10px] font-semibold text-neutral-500 uppercase tracking-widest block">
-                Free Trial
-              </span>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Free Trial */}
+          <div className="p-6 rounded-xl border border-neutral-800 bg-[#0c0c0e]/50 flex flex-col justify-between space-y-4">
+            <div className="space-y-3">
+              <span className="text-[10px] font-semibold text-neutral-500 uppercase tracking-widest block">Free Trial</span>
               <div className="text-3xl font-extrabold text-white">Rp 0</div>
               <p className="text-xs text-neutral-400">Cocok untuk eksplorasi platform awal.</p>
-              <ul className="space-y-2 text-xs text-neutral-400 pt-4">
+              <ul className="space-y-1.5 text-xs text-neutral-400 pt-2">
                 <li>✓ Pantau hingga 10 tender aktif</li>
                 <li>✓ 1 Kata kunci alarm</li>
-                <li>✓ Notifikasi via Dashboard saja</li>
+                <li>✓ Notifikasi via Dashboard</li>
+                <li>✓ 2 AI Ringkasan per bulan</li>
               </ul>
             </div>
-            <Link
-              href="/register"
-              className="block text-center w-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 py-2 rounded text-xs font-semibold text-white transition-colors"
-            >
+            <Link href="/register" className="block text-center w-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 py-2 rounded text-xs font-semibold text-white transition-colors">
               Mulai Uji Coba
             </Link>
           </div>
 
-          {/* Pro plan */}
-          <div className="p-8 rounded-xl border border-white/20 bg-[#0e0e11] flex flex-col justify-between space-y-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 bg-white text-[#09090b] text-[8px] font-bold uppercase tracking-widest px-3 py-1 rounded-bl-lg">
-              Populer
-            </div>
-            <div className="space-y-4">
-              <span className="text-[10px] font-semibold text-white uppercase tracking-widest block">
-                PRO LICENSE
-              </span>
-              <div className="text-3xl font-extrabold text-white">
-                Rp 799.000 <span className="text-xs font-normal text-neutral-500">/ bln</span>
-              </div>
-              <p className="text-xs text-neutral-400">Cocok untuk tim kontraktor/IT tender aktif.</p>
-              <ul className="space-y-2 text-xs text-neutral-300 pt-4">
-                <li>✓ Akses Tender LPSE Unlimited</li>
-                <li>✓ Unlimited Kata Kunci Pemantau</li>
-                <li>✓ Alert Instan Telegram & Email</li>
-                <li>✓ Prioritas AI Ringkasan Dokumen</li>
+          {/* Starter */}
+          <div className="p-6 rounded-xl border border-neutral-800 bg-[#0c0c0e]/50 flex flex-col justify-between space-y-4">
+            <div className="space-y-3">
+              <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-widest block">Starter</span>
+              <div className="text-3xl font-extrabold text-white">Rp 59.000 <span className="text-xs font-normal text-neutral-500">/ bln</span></div>
+              <p className="text-xs text-neutral-400">Untuk kontraktor perorangan & freelancer.</p>
+              <ul className="space-y-1.5 text-xs text-neutral-300 pt-2">
+                <li>✓ 3 kata kunci dipantau</li>
+                <li>✓ Notifikasi 1 Telegram personal</li>
+                <li>✓ Delay notifikasi 30 menit</li>
+                <li>✓ 3 AI Summary dokumen per bulan</li>
               </ul>
             </div>
-            <Link
-              href="/register"
-              className="block text-center w-full bg-white hover:bg-neutral-200 py-2 rounded text-xs font-semibold text-[#09090b] transition-all"
-            >
-              Daftar Pro Sekarang
+            <Link href="/register" className="block text-center w-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 py-2 rounded text-xs font-semibold text-white transition-colors">
+              Mulai Starter
+            </Link>
+          </div>
+
+          {/* Pro (Best Seller) */}
+          <div className="p-6 rounded-xl border border-white/20 bg-[#0e0e11] flex flex-col justify-between space-y-4 relative overflow-hidden">
+            <div className="absolute top-0 right-0 bg-white text-[#09090b] text-[8px] font-bold uppercase tracking-widest px-3 py-1 rounded-bl-lg">
+              Best Seller
+            </div>
+            <div className="space-y-3">
+              <span className="text-[10px] font-semibold text-white uppercase tracking-widest block">Pro License</span>
+              <div className="text-3xl font-extrabold text-white">Rp 109.000 <span className="text-xs font-normal text-neutral-500">/ bln</span></div>
+              <p className="text-xs text-neutral-400">Terlaris untuk software house & vendor menengah.</p>
+              <ul className="space-y-1.5 text-xs text-neutral-300 pt-2">
+                <li>✓ 10 kata kunci pemantau</li>
+                <li>✓ Notifikasi real-time ({'<'} 5 menit)</li>
+                <li>✓ Bisa masuk 1 grup Telegram Tim</li>
+                <li>✓ 20 AI Summary / bulan</li>
+                <li>✓ Dashboard analitik pemenang</li>
+              </ul>
+            </div>
+            <Link href="/register" className="block text-center w-full bg-white hover:bg-neutral-200 py-2 rounded text-xs font-semibold text-[#09090b] transition-all">
+              Daftar Pro
+            </Link>
+          </div>
+
+          {/* Enterprise */}
+          <div className="p-6 rounded-xl border border-neutral-800 bg-[#0c0c0e]/50 flex flex-col justify-between space-y-4">
+            <div className="space-y-3">
+              <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-widest block">Enterprise</span>
+              <div className="text-3xl font-extrabold text-white">Rp 300.000 <span className="text-xs font-normal text-neutral-500">/ bln</span></div>
+              <p className="text-xs text-neutral-400">Untuk kontraktor kakap & perusahaan aktif.</p>
+              <ul className="space-y-1.5 text-xs text-neutral-300 pt-2">
+                <li>✓ Unlimited kata kunci</li>
+                <li>✓ Multi-grup Telegram</li>
+                <li>✓ Unlimited AI Summary</li>
+                <li>✓ Prioritas server bot paling cepat</li>
+                <li>✓ Histori kompetitor (PT mana menang apa)</li>
+              </ul>
+            </div>
+            <Link href="/register" className="block text-center w-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 py-2 rounded text-xs font-semibold text-white transition-colors">
+              Hubungi Tim
             </Link>
           </div>
         </div>
@@ -169,7 +196,8 @@ export default function LandingPage() {
           {[
             { q: 'Apa itu TenderLens?', a: 'TenderLens adalah platform kecerdasan pengadaan LPSE yang memonitor, meringkas, dan mengirimkan notifikasi tender terbaru yang sesuai dengan bisnis Anda secara otomatis.' },
             { q: 'Apakah data tender diperbarui secara real-time?', a: 'Ya. Crawler kami berjalan setiap beberapa menit untuk memeriksa portal LPSE nasional dan daerah. Data biasanya muncul dalam 1-5 menit setelah publikasi resmi.' },
-            { q: 'Berapa lama uji coba gratisnya?', a: 'Paket Free Trial berlaku selama 30 hari tanpa batasan akses awal. Anda bisa menikmati 10 tender aktif dan 1 kata kunci alarm selama masa uji coba.' },
+            { q: 'Berapa lama uji coba gratisnya?', a: 'Paket Free Trial berlaku selama 30 hari tanpa batasan akses awal. Anda bisa menikmati 10 tender aktif, 1 kata kunci alarm, dan 2 AI Summary per bulan.' },
+            { q: 'Apa perbedaan paket Starter, Pro, dan Enterprise?', a: 'Starter (Rp 59rb/bln) untuk perorangan dengan 3 keyword & delay 30 menit. Pro (Rp 109rb/bln) untuk tim kecil dengan 10 keyword real-time & dashboard analitik. Enterprise (Rp 300rb/bln) untuk perusahaan besar dengan unlimited keyword, multi-grup Telegram, prioritas server, dan fitur histori kompetitor.' },
             { q: 'Bisakah saya mengubah paket langganan kapan saja?', a: 'Tentu. Anda dapat meningkatkan atau menurunkan paket kapan saja melalui portal billing. Perubahan akan berlaku di siklus penagihan berikutnya.' },
             { q: 'Apakah data tender aman?', a: 'Kami mengenkripsi seluruh data dalam transit (TLS 1.3) dan saat istirahat (AES-256). Data tenant terisolasi secara ketat dan tidak dibagikan antar pengguna.' },
           ].map((faq, i) => (

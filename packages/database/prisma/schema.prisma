@@ -21,31 +21,36 @@ enum UserRole {
 }
 
 model Tenant {
-  id            String         @id @default(uuid())
-  name          String
-  slug          String         @unique
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id                  String         @id @default(uuid())
+  name                String
+  slug                String         @unique
+  telegramChatId      String?
+  telegramConnectedAt DateTime?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
   
   // Relations
-  members       TenantMember[]
-  subscription  Subscription?
-  tendersSaved  SavedTender[]
-  alerts        KeywordAlert[]
-  invoices      Invoice[]
+  members             TenantMember[]
+  subscription        Subscription?
+  tendersSaved        SavedTender[]
+  alerts              KeywordAlert[]
+  invoices            Invoice[]
 }
 
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
-  passwordHash  String?        // Nullable for OAuth accounts
-  name          String?
-  avatarUrl     String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id                      String         @id @default(uuid())
+  email                   String         @unique
+  passwordHash            String?        // Nullable for OAuth accounts
+  name                    String?
+  avatarUrl               String?
+  pendingEmail            String?
+  emailVerificationCode   String?
+  emailVerificationExpiresAt DateTime?
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
   
   // Relations
-  tenantMembers TenantMember[]
+  tenantMembers           TenantMember[]
 }
 
 model TenantMember {
@@ -69,6 +74,7 @@ model TenantMember {
 
 enum SubscriptionTier {
   FREE_TRIAL
+  STARTER
   PRO
   ENTERPRISE
 }
@@ -81,16 +87,18 @@ enum SubscriptionStatus {
 }
 
 model Subscription {
-  id        String             @id @default(uuid())
-  tenantId  String             @unique
-  tier      SubscriptionTier   @default(FREE_TRIAL)
-  status    SubscriptionStatus @default(ACTIVE)
-  expiresAt DateTime
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
+  id                    String             @id @default(uuid())
+  tenantId              String             @unique
+  tier                  SubscriptionTier   @default(FREE_TRIAL)
+  status                SubscriptionStatus @default(ACTIVE)
+  expiresAt             DateTime
+  monthlyAiSummaryUsed  Int                @default(0)
+  monthlyAiSummaryResetAt DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
 
   // Relations
-  tenant    Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant                Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }
 
 model Invoice {

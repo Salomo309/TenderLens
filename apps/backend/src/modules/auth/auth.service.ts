@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException, BadRequestException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
@@ -62,6 +62,7 @@ export class AuthService {
         id: result.user.id,
         email: result.user.email,
         name: result.user.name,
+        avatarUrl: result.user.avatarUrl,
       },
       tenant: {
         id: result.tenant.id,
@@ -108,6 +109,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         name: user.name,
+        avatarUrl: user.avatarUrl,
       },
       tenant: {
         id: primaryMember.tenant.id,
@@ -137,6 +139,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         name: user.name,
+        avatarUrl: user.avatarUrl,
         role: primaryMember.role,
       },
       tenant: {
@@ -145,5 +148,117 @@ export class AuthService {
         slug: primaryMember.tenant.slug,
       },
     };
+  }
+
+  async requestEmailChange(userId: string, newEmail: string) {
+    const existing = await this.prisma.user.findUnique({ where: { email: newEmail } });
+    if (existing) {
+      throw new ConflictException('Email sudah digunakan.');
+    }
+
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        pendingEmail: newEmail,
+        emailVerificationCode: code,
+        emailVerificationExpiresAt: expiresAt,
+      },
+    });
+
+    // Try to send verification email via Resend
+    const resendKey = process.env.RESEND_API_KEY;
+    const mailFrom = process.env.MAIL_FROM || 'no-reply@tenderlens.id';
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    let emailSent = false;
+    if (resendKey && user?.email) {
+      try {
+        const resp = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${resendKey}`,
+          },
+          body: JSON.stringify({
+            from: mailFrom,
+            to: user.email,
+            subject: '[TenderLens] Kode Verifikasi Email',
+            text: `Gunakan kode berikut untuk memverifikasi email baru Anda: ${code}\n\nKode berlaku 15 menit.\n\nAbaikan jika Anda tidak meminta perubahan email.`,
+          }),
+        });
+        emailSent = resp.ok;
+        if (!resp.ok) Logger.warn(`Resend responded with ${resp.status}: ${await resp.text()}`);
+      } catch (err) {
+        Logger.warn(`Failed to send verification email: ${err}`);
+      }
+    }
+
+    return {
+      message: emailSent
+        ? 'Kode verifikasi telah dikirim ke email Anda saat ini.'
+        : `Kode verifikasi (dev mode): ${code}`,
+      expiresInMinutes: 15,
+      ...(emailSent ? {} : { devCode: code }),
+    };
+  }
+
+  async verifyEmailChange(userId: string, code: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new BadRequestException('User tidak ditemukan.');
+
+    if (!user.pendingEmail || !user.emailVerificationCode || !user.emailVerificationExpiresAt) {
+      throw new BadRequestException('Tidak ada permintaan perubahan email.');
+    }
+
+    if (user.emailVerificationExpiresAt < new Date()) {
+      throw new BadRequestException('Kode verifikasi sudah kedaluwarsa. Silakan minta kode baru.');
+    }
+
+    if (user.emailVerificationCode !== code.toUpperCase()) {
+      throw new BadRequestException('Kode verifikasi salah.');
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        email: user.pendingEmail,
+        pendingEmail: null,
+        emailVerificationCode: null,
+        emailVerificationExpiresAt: null,
+      },
+    });
+
+    return { message: 'Email berhasil diperbarui.', email: user.pendingEmail };
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    if (!currentPassword || !newPassword) {
+      throw new BadRequestException('Password lama dan baru wajib diisi.');
+    }
+
+    if (newPassword.length < 6) {
+      throw new BadRequestException('Password baru minimal 6 karakter.');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.passwordHash) {
+      throw new BadRequestException('Akun ini tidak memiliki password.');
+    }
+
+    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!valid) {
+      throw new UnauthorizedException('Password lama tidak sesuai.');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+
+    return { message: 'Password berhasil diperbarui.' };
   }
 }

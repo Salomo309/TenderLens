@@ -10,8 +10,10 @@ const navItems = [
   { href: '/dashboard', segment: null, label: '📊 Dashboard' },
   { href: '/dashboard/tenders', segment: 'tenders', label: '💼 LPSE Tenders' },
   { href: '/dashboard/alerts', segment: 'alerts', label: '🔔 Keyword Alerts' },
+  { href: '/dashboard/telegram', segment: 'telegram', label: '✈️ Telegram' },
   { href: '/dashboard/scraper', segment: 'scraper', label: '📡 Scraper Health' },
   { href: '/dashboard/billing', segment: 'billing', label: '💳 Billing Portal' },
+  { href: '/dashboard/settings', segment: 'settings', label: '⚙️ Settings' },
 ];
 
 export default function DashboardLayout({

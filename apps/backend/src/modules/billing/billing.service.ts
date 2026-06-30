@@ -44,9 +44,8 @@ export class BillingService {
   /**
    * Generates a new invoice and requests a Midtrans Snap transaction token
    */
-  async createSubscriptionInvoice(tenantId: string, email: string, name: string): Promise<any> {
+  async createSubscriptionInvoice(tenantId: string, tier: string, amount: number, email: string, name: string): Promise<any> {
     const orderId = `INV-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`.toUpperCase();
-    const amount = 799000; // Rp 799,000 for Pro Tier
 
     let snapToken = null;
 
@@ -76,10 +75,10 @@ export class BillingService {
             },
             item_details: [
               {
-                id: 'pro_monthly',
+                id: `${tier.toLowerCase()}_monthly`,
                 price: amount,
                 quantity: 1,
-                name: 'TenderLens Pro Subscription - 30 Days',
+                name: `TenderLens ${tier} Subscription - 30 Days`,
               },
             ],
           }),
@@ -159,24 +158,30 @@ export class BillingService {
     // 2. Upgrade tenant subscription structure if payment is cleared
     if (shouldActivateSubscription) {
       const expirationDate = new Date();
-      expirationDate.setDate(expirationDate.getDate() + 30); // 30-day Pro license active
+      expirationDate.setDate(expirationDate.getDate() + 30); // 30-day license active
+
+      // Determine tier from amount (stored in invoice)
+      let targetTier: SubscriptionTier = SubscriptionTier.PRO;
+      const amt = Number(invoice.amount);
+      if (amt === 59000) targetTier = SubscriptionTier.STARTER;
+      else if (amt === 300000) targetTier = SubscriptionTier.ENTERPRISE;
 
       await this.prisma.subscription.upsert({
         where: { tenantId: invoice.tenantId },
         update: {
-          tier: SubscriptionTier.PRO,
+          tier: targetTier,
           status: SubscriptionStatus.ACTIVE,
           expiresAt: expirationDate,
         },
         create: {
           tenantId: invoice.tenantId,
-          tier: SubscriptionTier.PRO,
+          tier: targetTier,
           status: SubscriptionStatus.ACTIVE,
           expiresAt: expirationDate,
         },
       });
 
-      this.logger.log(`Tenant ${invoice.tenantId} upgraded successfully to PRO. Expires on: ${expirationDate.toISOString()}`);
+      this.logger.log(`Tenant ${invoice.tenantId} upgraded successfully to ${targetTier}. Expires on: ${expirationDate.toISOString()}`);
     }
 
     return { status: 'success', invoiceStatus: finalInvoiceStatus };

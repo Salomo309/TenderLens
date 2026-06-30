@@ -3,20 +3,35 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 
+const TIER_ORDER = ['FREE_TRIAL', 'STARTER', 'PRO', 'ENTERPRISE'];
+
+interface Plan {
+  label: string;
+  price: number;
+  features: string[];
+  maxKeywords: number;
+  maxSavedTenders: number;
+  maxAiSummariesPerMonth: number;
+  notificationDelayMinutes: number;
+  telegramGroupAllowed: boolean;
+  competitorHistory: boolean;
+}
+
 export default function BillingPage() {
   const [subscription, setSubscription] = useState<any>(null);
   const [invoices, setInvoices] = useState<any[]>([]);
-  const [plan, setPlan] = useState<any>(null);
+  const [plan, setPlan] = useState<Plan | null>(null);
+  const [allPlans, setAllPlans] = useState<Record<string, Plan>>({});
   const [loading, setLoading] = useState(true);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [selectedTier, setSelectedTier] = useState('PRO');
   const [upgrading, setUpgrading] = useState(false);
   const [upgradeMsg, setUpgradeMsg] = useState('');
 
   useEffect(() => {
-    // Dynamic import/load of Midtrans Snap JS SDK
     const midtransScriptUrl = 'https://app.sandbox.midtrans.com/snap/snap.js';
     const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || 'Mid-client-gq97DEqLomjtxj5G';
-    
+
     let script = document.querySelector(`script[src="${midtransScriptUrl}"]`) as HTMLScriptElement;
     if (!script) {
       script = document.createElement('script');
@@ -30,6 +45,7 @@ export default function BillingPage() {
         setSubscription(res.subscription);
         setInvoices(res.invoices || []);
         setPlan(res.plan);
+        setAllPlans(res.allPlans || {});
       })
       .catch(() => setUpgradeMsg('Gagal memuat data langganan. Pastikan server backend berjalan.'))
       .finally(() => setLoading(false));
@@ -38,7 +54,10 @@ export default function BillingPage() {
   const handleUpgrade = async () => {
     setUpgrading(true);
     try {
-      const res = await apiFetch<{ snapToken: string; invoice: any; message: string }>('/billing/upgrade', { method: 'POST' });
+      const res = await apiFetch<any>('/billing/upgrade', {
+        method: 'POST',
+        body: JSON.stringify({ tier: selectedTier }),
+      });
       setShowUpgrade(false);
 
       if (res.snapToken) {
@@ -50,7 +69,7 @@ export default function BillingPage() {
               order_id: res.invoice?.midtransOrderId,
               transaction_status: 'settlement',
               status_code: '200',
-              gross_amount: '799000',
+              gross_amount: String(allPlans[selectedTier]?.price || 0),
               signature_key: 'mock',
               transaction_time: new Date().toISOString(),
               transaction_id: 'mock-trx-' + Date.now(),
@@ -58,38 +77,37 @@ export default function BillingPage() {
               payment_type: 'mock',
             }),
           });
-          setUpgradeMsg('Pembayaran berhasil! Lisensi Pro Anda sudah aktif.');
+          setUpgradeMsg(`Pembayaran berhasil! Lisensi ${allPlans[selectedTier]?.label} Anda sudah aktif.`);
           const sub = await apiFetch('/billing/subscription');
           setSubscription(sub.subscription);
           setInvoices(sub.invoices || []);
+          setPlan(sub.plan);
           return;
         }
-        // Trigger Midtrans Snap payment popup
         if ((window as any).snap) {
           (window as any).snap.pay(res.snapToken, {
-            onSuccess: (result: any) => {
+            onSuccess: () => {
               setUpgradeMsg('Pembayaran berhasil! Sistem sedang memproses lisensi Anda.');
-              // Refresh details
               apiFetch('/billing/subscription').then((res: any) => {
                 setSubscription(res.subscription);
                 setInvoices(res.invoices || []);
+                setPlan(res.plan);
               });
             },
-            onPending: (result: any) => {
-              setUpgradeMsg('Pembayaran pending. Silakan selesaikan pembayaran Anda.');
-            },
-            onError: (result: any) => {
-              setUpgradeMsg('Pembayaran gagal. Silakan coba kembali.');
-            },
-            onClose: () => {
-              setUpgradeMsg('Checkout dibatalkan.');
-            }
+            onPending: () => setUpgradeMsg('Pembayaran pending. Silakan selesaikan pembayaran Anda.'),
+            onError: () => setUpgradeMsg('Pembayaran gagal. Silakan coba kembali.'),
+            onClose: () => setUpgradeMsg('Checkout dibatalkan.'),
           });
         } else {
           setUpgradeMsg('Midtrans Snap SDK gagal dimuat. Token: ' + res.snapToken);
         }
       } else {
-        setUpgradeMsg(res.message);
+        setUpgradeMsg(res.message || 'Berhasil.');
+        // Refresh data
+        const sub = await apiFetch('/billing/subscription');
+        setSubscription(sub.subscription);
+        setInvoices(sub.invoices || []);
+        setPlan(sub.plan);
       }
     } catch (err: any) {
       setUpgradeMsg(err.message || 'Gagal memulai proses checkout.');
@@ -106,10 +124,14 @@ export default function BillingPage() {
     </div>
   );
 
-  const tier = subscription?.tier || 'FREE_TRIAL';
+  const currentTier = subscription?.tier || 'FREE_TRIAL';
   const status = subscription?.status || 'ACTIVE';
   const expiresAt = subscription?.expiresAt ? new Date(subscription.expiresAt) : null;
   const daysLeft = expiresAt ? Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+
+  // Determine which tiers are upgrades from current
+  const currentIdx = TIER_ORDER.indexOf(currentTier);
+  const upgradeTiers = TIER_ORDER.filter((t, i) => i > currentIdx && allPlans[t] && t !== 'FREE_TRIAL');
 
   return (
     <div className="space-y-6">
@@ -124,13 +146,14 @@ export default function BillingPage() {
         </div>
       )}
 
+      {/* Current Plan Card */}
       <div className="rounded-xl border border-neutral-800 bg-[#0c0c0e] overflow-hidden">
         <div className="p-6">
           <div className="flex items-start justify-between mb-6">
             <div className="space-y-1">
               <span className="text-[10px] font-semibold text-neutral-500 uppercase tracking-widest">Paket Saat Ini</span>
               <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-bold text-white">{plan?.label || tier} LICENSE</h2>
+                <h2 className="text-2xl font-bold text-white">{plan?.label || currentTier} LICENSE</h2>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                   status === 'ACTIVE' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-amber-950 text-amber-300 border border-amber-800'
                 }`}>
@@ -142,7 +165,7 @@ export default function BillingPage() {
               <div className="text-lg font-bold text-white font-mono">
                 {plan?.price ? formatCurrency(plan.price) : 'Rp 0'}
               </div>
-              <div className="text-[10px] text-neutral-500">{tier === 'PRO' ? 'per bulan' : 'Free Trial'}</div>
+              <div className="text-[10px] text-neutral-500">{currentTier === 'FREE_TRIAL' ? 'Free Trial' : 'per bulan'}</div>
             </div>
           </div>
 
@@ -173,11 +196,13 @@ export default function BillingPage() {
           )}
 
           <div className="flex gap-3">
-            <button
-              onClick={() => setShowUpgrade(true)}
-              className="px-5 py-2 bg-white hover:bg-neutral-200 text-neutral-900 text-xs font-semibold rounded-lg transition-colors">
-              {tier === 'PRO' ? 'Tingkatkan ke Enterprise' : 'Tingkatkan ke Pro'}
-            </button>
+            {upgradeTiers.length > 0 && (
+              <button
+                onClick={() => { setSelectedTier(upgradeTiers[0]); setShowUpgrade(true); }}
+                className="px-5 py-2 bg-white hover:bg-neutral-200 text-neutral-900 text-xs font-semibold rounded-lg transition-colors">
+                Tingkatkan Lisensi
+              </button>
+            )}
             <button className="px-5 py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 text-xs font-semibold rounded-lg transition-colors">
               Perbarui Pembayaran
             </button>
@@ -185,6 +210,56 @@ export default function BillingPage() {
         </div>
       </div>
 
+      {/* All Plans Comparison */}
+      <div className="rounded-xl border border-neutral-800 bg-[#0c0c0e] overflow-hidden">
+        <div className="p-4 border-b border-neutral-800 bg-neutral-900/20">
+          <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Bandingkan Paket</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-6">
+          {TIER_ORDER.filter(t => allPlans[t]).map((tierKey) => {
+            const p = allPlans[tierKey];
+            const isCurrent = tierKey === currentTier;
+            const isEnterprise = tierKey === 'ENTERPRISE';
+            return (
+              <div key={tierKey} className={`p-5 rounded-xl border flex flex-col justify-between space-y-4 ${
+                isCurrent ? 'border-white/30 bg-[#0e0e11]' : 'border-neutral-800 bg-[#0c0c0e]/50'
+              }`}>
+                <div className="space-y-3">
+                  <span className={`text-[10px] font-semibold uppercase tracking-widest block ${isCurrent ? 'text-white' : 'text-neutral-400'}`}>
+                    {p.label} {isCurrent && '(Aktif)'}
+                  </span>
+                  <div className="text-2xl font-extrabold text-white">
+                    {formatCurrency(p.price)} <span className="text-[10px] font-normal text-neutral-500">/ bln</span>
+                  </div>
+                  <ul className="space-y-1.5 text-xs text-neutral-300 pt-1">
+                    <li>✓ {p.maxKeywords >= 9999 ? 'Unlimited' : p.maxKeywords} kata kunci</li>
+                    <li>✓ {p.maxSavedTenders >= 9999 ? 'Unlimited' : p.maxSavedTenders} tender tersimpan</li>
+                    <li>✓ {p.maxAiSummariesPerMonth >= 9999 ? 'Unlimited' : p.maxAiSummariesPerMonth} AI Summary / bln</li>
+                    <li>✓ {p.notificationDelayMinutes > 0 ? `Delay ${p.notificationDelayMinutes} menit` : 'Notifikasi real-time'}</li>
+                    <li>✓ {p.telegramGroupAllowed ? 'Grup Telegram' : 'Personal Telegram'}</li>
+                    <li>✓ {p.competitorHistory ? 'Histori kompetitor' : '-'}</li>
+                  </ul>
+                </div>
+                {!isCurrent && !isEnterprise && (
+                  <button
+                    onClick={() => { setSelectedTier(tierKey); setShowUpgrade(true); }}
+                    className="w-full px-4 py-1.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 rounded text-xs font-semibold text-white transition-colors"
+                  >
+                    Pilih {p.label}
+                  </button>
+                )}
+                {isEnterprise && !isCurrent && (
+                  <button className="w-full px-4 py-1.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 rounded text-xs font-semibold text-white transition-colors">
+                    Hubungi Tim
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Invoice History */}
       <div className="rounded-xl border border-neutral-800 bg-[#0c0c0e] overflow-hidden">
         <div className="p-4 border-b border-neutral-800 bg-neutral-900/20">
           <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Riwayat Pembayaran</h3>
@@ -225,6 +300,7 @@ export default function BillingPage() {
         )}
       </div>
 
+      {/* Upgrade Modal */}
       {showUpgrade && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="w-full max-w-md bg-[#0c0c0e] border border-neutral-800 rounded-2xl p-8 space-y-5">
@@ -233,15 +309,16 @@ export default function BillingPage() {
               <button onClick={() => setShowUpgrade(false)} className="text-neutral-500 hover:text-white text-lg font-bold">✕</button>
             </div>
             <p className="text-xs text-neutral-400">
-              Anda akan meningkatkan paket ke <strong className="text-white">{tier === 'PRO' ? 'Enterprise License' : 'Pro License'}</strong>.
-              {tier === 'PRO' ? ' Tim kami akan menghubungi Anda untuk diskusi kebutuhan.' : ' Pembayaran akan diproses melalui Midtrans.'}
+              Anda akan meningkatkan ke <strong className="text-white">{allPlans[selectedTier]?.label}</strong> sebesar
+              {' '}<strong className="text-white font-mono">{formatCurrency(allPlans[selectedTier]?.price || 0)}/bulan</strong>.
+              Pembayaran akan diproses melalui Midtrans.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={handleUpgrade}
                 disabled={upgrading}
                 className="flex-1 px-4 py-2 bg-white hover:bg-neutral-200 text-neutral-900 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-                {upgrading ? <span className="h-4 w-4 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin" /> : 'Kirim Permintaan'}
+                {upgrading ? <span className="h-4 w-4 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin" /> : 'Lanjutkan Pembayaran'}
               </button>
               <button onClick={() => setShowUpgrade(false)} className="flex-1 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 text-xs font-semibold rounded-lg transition-colors">
                 Batal

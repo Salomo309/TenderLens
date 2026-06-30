@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationChannel } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser, JwtPayload } from '../auth/decorators/current-user.decorator';
+import { SubscriptionHelper } from '../../common/helpers/subscription.helper';
 
 const CHANNEL_LABELS: Record<string, string> = {
   EMAIL: 'Email',
@@ -20,7 +21,11 @@ interface CreateAlertDto {
 @UseGuards(JwtAuthGuard)
 @Controller('alerts')
 export class AlertsController {
-  constructor(private readonly prisma: PrismaService) {}
+  private subscriptionHelper: SubscriptionHelper;
+
+  constructor(private readonly prisma: PrismaService) {
+    this.subscriptionHelper = new SubscriptionHelper(this.prisma);
+  }
 
   @Get('channels')
   async getChannels() {
@@ -41,6 +46,7 @@ export class AlertsController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: CreateAlertDto
   ) {
+    await this.subscriptionHelper.checkKeywordLimit(user.tenantId);
     return this.prisma.keywordAlert.create({
       data: {
         tenantId: user.tenantId,

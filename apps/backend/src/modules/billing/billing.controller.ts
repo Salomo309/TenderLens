@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, HttpCode, HttpStatus, UseGuards, BadRequestException } from '@nestjs/common';
 import { BillingService, MidtransNotificationDto } from './billing.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser, JwtPayload } from '../auth/decorators/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
+import { PLANS, getPlanConfig } from '../../common/constants/plans';
 
 @Controller('billing')
 export class BillingController {
@@ -22,48 +23,38 @@ export class BillingController {
       orderBy: { createdAt: 'desc' },
     });
 
-    const plans: Record<string, { label: string; price: number; features: string[] }> = {
-      FREE_TRIAL: {
-        label: 'Free Trial',
-        price: 0,
-        features: [
-          'Pantau hingga 10 tender aktif',
-          '1 Kata kunci alarm',
-          'Notifikasi via Dashboard',
-          'AI Ringkasan Standar',
-        ],
-      },
-      PRO: {
-        label: 'Pro License',
-        price: 799000,
-        features: [
-          'Akses Tender LPSE Unlimited',
-          'Unlimited Kata Kunci Pemantau',
-          'Alert Instan Telegram & Email',
-          'Prioritas AI Ringkasan Dokumen',
-        ],
-      },
-      ENTERPRISE: {
-        label: 'Enterprise License',
-        price: 0,
-        features: [
-          'Akses Semua LPSE + API',
-          'Dedicated Account Manager',
-          'Kustom Alert & Integrasi',
-          'Prioritas Support 24/7',
-        ],
-      },
-    };
-
     const tier = (subscription?.tier || 'FREE_TRIAL') as string;
-    const plan = plans[tier] || plans.FREE_TRIAL;
+    const plan = getPlanConfig(tier);
 
-    return { subscription, invoices, plan };
+    return { subscription, invoices, plan, allPlans: PLANS };
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('upgrade')
-  async requestUpgrade(@CurrentUser() user: JwtPayload) {
+  async requestUpgrade(
+    @CurrentUser() user: JwtPayload,
+    @Body('tier') tier?: string,
+  ) {
+    const targetTier = tier || 'PRO';
+    if (!PLANS[targetTier] || targetTier === 'FREE_TRIAL') {
+      throw new BadRequestException('Tier tidak valid');
+    }
+
+    const plan = getPlanConfig(targetTier);
+    if (plan.price === 0) {
+      // Enterprise: langsung aktivasi tanpa pembayaran
+      const expirationDate = new Date();
+      expirationDate.setDate(expirationDate.getDate() + 30);
+
+      await this.prisma.subscription.upsert({
+        where: { tenantId: user.tenantId },
+        update: { tier: targetTier as any, status: 'ACTIVE', expiresAt: expirationDate },
+        create: { tenantId: user.tenantId, tier: targetTier as any, status: 'ACTIVE', expiresAt: expirationDate },
+      });
+
+      return { message: `Lisensi ${plan.label} berhasil diaktifkan.`, snapToken: null, invoice: null };
+    }
+
     const dbUser = await this.prisma.user.findUnique({ where: { id: user.sub } });
     const tenant = await this.prisma.tenant.findUnique({ where: { id: user.tenantId } });
 
@@ -73,9 +64,10 @@ export class BillingController {
       data: { status: 'EXPIRED' },
     });
 
-    // Triggers invoice generation
     const result = await this.billingService.createSubscriptionInvoice(
       user.tenantId,
+      targetTier,
+      plan.price,
       dbUser?.email || user.email,
       dbUser?.name || tenant?.name || 'Customer'
     );
@@ -84,6 +76,7 @@ export class BillingController {
       message: 'Checkout token generated successfully.',
       snapToken: result.snapToken,
       invoice: result.invoice,
+      tier: targetTier,
     };
   }
 

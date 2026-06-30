@@ -13,6 +13,8 @@ export default function AlertsPage() {
   const [emailAddress, setEmailAddress] = useState('');
   const [channels, setChannels] = useState<string[]>(['EMAIL']);
   const [submitting, setSubmitting] = useState(false);
+  const [connectedTelegram, setConnectedTelegram] = useState<string | null>(null);
+  const [telegramConnected, setTelegramConnected] = useState(false);
 
   useEffect(() => {
     apiFetch<any[]>('/alerts/channels')
@@ -21,6 +23,16 @@ export default function AlertsPage() {
         { value: 'EMAIL', label: 'Email' },
         { value: 'TELEGRAM', label: 'Telegram' },
       ]));
+    // Fetch connected Telegram account
+    apiFetch<any>('/telegram/bot-info')
+      .then((res: any) => {
+        setTelegramConnected(res.connected);
+        setConnectedTelegram(res.telegramChatId);
+        if (res.connected) {
+          setTelegramChatId(res.telegramChatId);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const fetchAlerts = useCallback(async () => {
@@ -116,6 +128,14 @@ export default function AlertsPage() {
               <input type="text" placeholder="@username_atau_chat_id" value={telegramChatId}
                 onChange={(e) => setTelegramChatId(e.target.value)}
                 className="w-full bg-[#121214] border border-neutral-800 rounded-lg px-3 py-2 text-sm text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-neutral-700" required />
+              {telegramConnected && connectedTelegram === telegramChatId && (
+                <p className="text-[10px] text-emerald-500 mt-1">Terhubung ke akun Telegram Anda</p>
+              )}
+              {!telegramConnected && (
+                <a href="/dashboard/telegram" className="text-[10px] text-neutral-500 hover:text-white mt-1 inline-block">
+                  Belum punya Chat ID? Hubungkan Telegram dulu →
+                </a>
+              )}
             </div>
           )}
           <button type="submit" disabled={submitting}
