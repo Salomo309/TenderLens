@@ -2,12 +2,12 @@
 set -euo pipefail
 
 # ============================================================
-# TenderLens Staging Deployment Script (Debian)
+# SinyalTender Staging Deployment Script (Debian)
 # Jalankan sebagai root atau user dengan sudo.
 # ============================================================
 
-APP_DIR="/opt/tenderlens"
-APP_USER="tenderlens"
+APP_DIR="/opt/sinyaltender"
+APP_USER="sinyaltender"
 NODE_VERSION="20"
 
 echo "=== 1. System Update & Dependencies ==="
@@ -26,12 +26,12 @@ systemctl enable --now postgresql
 
 # Create database & user
 sudo -u postgres psql <<SQL
-CREATE DATABASE tenderlens_staging;
-CREATE USER tenderlens WITH ENCRYPTED PASSWORD 'CHANGE_ME_PLEASE';
-GRANT ALL PRIVILEGES ON DATABASE tenderlens_staging TO tenderlens;
-ALTER DATABASE tenderlens_staging OWNER TO tenderlens;
-\c tenderlens_staging
-GRANT ALL ON SCHEMA public TO tenderlens;
+CREATE DATABASE sinyaltender_staging;
+CREATE USER sinyaltender WITH ENCRYPTED PASSWORD 'CHANGE_ME_PLEASE';
+GRANT ALL PRIVILEGES ON DATABASE sinyaltender_staging TO sinyaltender;
+ALTER DATABASE sinyaltender_staging OWNER TO sinyaltender;
+\c sinyaltender_staging
+GRANT ALL ON SCHEMA public TO sinyaltender;
 SQL
 
 echo "=== 4. Clone Repository ==="
@@ -45,7 +45,7 @@ fi
 
 echo "=== 5. Create Environment File ==="
 cat > apps/backend/.env <<ENVEOF
-DATABASE_URL=postgresql://tenderlens:CHANGE_ME_PLEASE@localhost:5432/tenderlens_staging
+DATABASE_URL=postgresql://sinyaltender:CHANGE_ME_PLEASE@localhost:5432/sinyaltender_staging
 JWT_SECRET=$(openssl rand -hex 32)
 
 MIDTRANS_MERCHANT_ID=
@@ -82,13 +82,13 @@ npm run build
 cd "$APP_DIR"
 
 echo "=== 9. Start with PM2 ==="
-pm2 start apps/backend/dist/main.js --name tenderlens-backend
-pm2 start apps/frontend/node_modules/.bin/next --name tenderlens-frontend -- start -p 3001
+pm2 start apps/backend/dist/main.js --name sinyaltender-backend
+pm2 start apps/frontend/node_modules/.bin/next --name sinyaltender-frontend -- start -p 3001
 pm2 save
 pm2 startup
 
 echo "=== 10. Configure Nginx (Proxy) ==="
-cat > /etc/nginx/sites-available/tenderlens <<NGINX
+cat > /etc/nginx/sites-available/sinyaltender <<NGINX
 server {
     listen 80;
     server_name _;
@@ -115,7 +115,7 @@ server {
 }
 NGINX
 
-ln -sf /etc/nginx/sites-available/tenderlens /etc/nginx/sites-enabled/
+ln -sf /etc/nginx/sites-available/sinyaltender /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl reload nginx
 

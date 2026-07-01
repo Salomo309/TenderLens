@@ -1,33 +1,33 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #120a0d;
-  --color-foreground: #f7f0f2;
+  --color-background: #0c0709;
+  --color-foreground: #fdf4f6;
 
-  --color-card: #180e12;
-  --color-card-foreground: #f7f0f2;
+  --color-card: #180c10;
+  --color-card-foreground: #fdf4f6;
 
-  --color-popover: #180e12;
-  --color-popover-foreground: #f7f0f2;
+  --color-popover: #180c10;
+  --color-popover-foreground: #fdf4f6;
 
-  --color-primary: #d14a66;
-  --color-primary-foreground: #f7f0f2;
+  --color-primary: #e3425a;
+  --color-primary-foreground: #fdf4f6;
 
-  --color-secondary: #30121d;
-  --color-secondary-foreground: #f7f0f2;
+  --color-secondary: #2e121c;
+  --color-secondary-foreground: #fdf4f6;
 
-  --color-muted: #30121d;
-  --color-muted-foreground: #b8989e;
+  --color-muted: #2e121c;
+  --color-muted-foreground: #c4929e;
 
-  --color-accent: #4d1c2e;
-  --color-accent-foreground: #f7f0f2;
+  --color-accent: #4d1b28;
+  --color-accent-foreground: #fdf4f6;
 
-  --color-destructive: #7f1d2b;
-  --color-destructive-foreground: #f7f0f2;
+  --color-destructive: #8a1d2d;
+  --color-destructive-foreground: #fdf4f6;
 
-  --color-border: #3d1a24;
-  --color-input: #241016;
-  --color-ring: #d14a66;
+  --color-border: #3d1420;
+  --color-input: #220d13;
+  --color-ring: #e3425a;
   
   --radius-lg: 0.75rem;
   --radius-md: calc(0.75rem - 2px);
@@ -48,22 +48,22 @@
 }
 
 /* Crimson color utility */
-.bg-maroon { background-color: #d14a66; }
-.bg-maroon-dark { background-color: #b02a48; }
-.bg-maroon-darker { background-color: #3d1a24; }
-.text-maroon { color: #e86882; }
-.border-maroon { border-color: #b02a48; }
-.hover\:bg-maroon-dark:hover { background-color: #b02a48; }
+.bg-maroon { background-color: #e3425a; }
+.bg-maroon-dark { background-color: #c42d48; }
+.bg-maroon-darker { background-color: #7a1828; }
+.text-maroon { color: #f27084; }
+.border-maroon { border-color: #c42d48; }
+.hover\:bg-maroon-dark:hover { background-color: #c42d48; }
 
 /* Custom premium styling features */
 .glassmorphism {
   background: rgba(24, 14, 18, 0.7);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(216, 74, 102, 0.15);
+  border: 1px solid rgba(227, 66, 90, 0.15);
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #f7f0f2 0%, #e86882 100%);
+  background: linear-gradient(135deg, #fdf4f6 0%, #f27084 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

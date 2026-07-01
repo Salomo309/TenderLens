@@ -55,10 +55,7 @@ export default function LoginPage() {
         {/* Brand header */}
         <div className="flex flex-col items-center space-y-2">
           <Link href="/" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-maroon flex items-center justify-center font-bold text-white">
-              TL
-            </div>
-            <span className="text-lg font-bold tracking-tight text-white">TenderLens</span>
+            <img src="/sinyal-tender-logo.png" alt="SinyalTender" className="h-8 w-auto" />
           </Link>
           <h2 className="text-xl font-bold text-white pt-2">Masuk ke Akun Anda</h2>
           <p className="text-xs text-muted-foreground text-center">

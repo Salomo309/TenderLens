@@ -21,10 +21,10 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
 
       ctx.reply(
         `Halo ${name}! 👋\n\n` +
-        `Akun Telegram Anda berhasil terhubung dengan TenderLens.\n\n` +
+        `Akun Telegram Anda berhasil terhubung dengan SinyalTender.\n\n` +
         `Chat ID Anda: \`${chatId}\`\n\n` +
-        `Copy Chat ID di atas, lalu masukkan ke halaman Settings > Telegram di dashboard TenderLens untuk mengaktifkan notifikasi.\n\n` +
-        `Terima kasih telah menggunakan TenderLens! 🚀`,
+        `Copy Chat ID di atas, lalu masukkan ke halaman Settings > Telegram di dashboard SinyalTender untuk mengaktifkan notifikasi.\n\n` +
+        `Terima kasih telah menggunakan SinyalTender! 🚀`,
         { parse_mode: 'Markdown' },
       );
 
@@ -34,7 +34,7 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
     this.bot.help((ctx) => {
       ctx.reply(
         'Perintah yang tersedia:\n' +
-        '/start - Hubungkan akun Telegram ke TenderLens\n' +
+        '/start - Hubungkan akun Telegram ke SinyalTender\n' +
         '/help - Bantuan perintah\n' +
         '/chatid - Tampilkan Chat ID Anda',
       );

@@ -1,11 +1,11 @@
-# TenderLens
+# SinyalTender
 
 Multi-tenant procurement intelligence platform for Indonesian government tenders (LPSE).
 
 ## Architecture
 
 ```
-tenderlens-workspace/
+sinyaltender-workspace/
 ├── apps/
 │   ├── backend/          # NestJS API (REST + WebSocket)
 │   └── frontend/         # Next.js 15 (React 19, Tailwind v4)
@@ -106,4 +106,4 @@ npm run dev:frontend
 
 ## License
 
-Private — PT. TenderLens Teknologi Indonesia
+Private — PT. SinyalTender Teknologi Indonesia

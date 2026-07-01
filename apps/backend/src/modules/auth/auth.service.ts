@@ -170,7 +170,7 @@ export class AuthService {
 
     // Try to send verification email via Resend
     const resendKey = process.env.RESEND_API_KEY;
-    const mailFrom = process.env.MAIL_FROM || 'no-reply@tenderlens.id';
+    const mailFrom = process.env.MAIL_FROM || 'no-reply@sinyaltender.id';
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
     let emailSent = false;
@@ -185,7 +185,7 @@ export class AuthService {
           body: JSON.stringify({
             from: mailFrom,
             to: user.email,
-            subject: '[TenderLens] Kode Verifikasi Email',
+            subject: '[SinyalTender] Kode Verifikasi Email',
             text: `Gunakan kode berikut untuk memverifikasi email baru Anda: ${code}\n\nKode berlaku 15 menit.\n\nAbaikan jika Anda tidak meminta perubahan email.`,
           }),
         });

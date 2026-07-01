@@ -81,7 +81,7 @@ export class BillingService {
               id: `${tier.toLowerCase()}_monthly`,
               price: amount,
               quantity: 1,
-              name: `TenderLens ${tier} Subscription - 30 Days`,
+              name: `SinyalTender ${tier} Subscription - 30 Days`,
             },
           ],
         };

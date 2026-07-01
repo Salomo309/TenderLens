@@ -275,7 +275,7 @@ export class ScraperService {
             alertId: alert.id,
             tenderTitle: tender.title,
             tenderPagu: tender.pagu.toLocaleString('id-ID'),
-            tenderUrl: `https://tenderlens.id/tenders/${tender.lpseId}`,
+            tenderUrl: `https://sinyaltender.id/tenders/${tender.lpseId}`,
             emailRecipient: alert.emailAddress || undefined,
             telegramChatId: alert.telegramChatId || undefined,
           };

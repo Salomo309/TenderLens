@@ -28,7 +28,7 @@ async function bootstrap() {
 
   // Swagger / OpenAPI documentation
   const config = new DocumentBuilder()
-    .setTitle('TenderLens API')
+    .setTitle('SinyalTender API')
     .setDescription('Multi-tenant procurement intelligence platform for Indonesian government tenders (LPSE)')
     .setVersion('1.0')
     .addBearerAuth()
@@ -50,7 +50,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
   
-  console.log(`🚀 TenderLens Backend API operational at: http://localhost:${port}/api`);
+  console.log(`🚀 SinyalTender Backend API operational at: http://localhost:${port}/api`);
   console.log(`📚 Swagger documentation at: http://localhost:${port}/api/docs`);
 }
 bootstrap();

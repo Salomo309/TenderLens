@@ -18,7 +18,7 @@ export class NotificationService {
   private readonly logger = new Logger(NotificationService.name);
   private readonly telegramToken = process.env.TELEGRAM_BOT_TOKEN;
   private readonly resendApiKey = process.env.RESEND_API_KEY;
-  private readonly mailFrom = process.env.MAIL_FROM || 'no-reply@tenderlens.id';
+  private readonly mailFrom = process.env.MAIL_FROM || 'no-reply@sinyaltender.id';
 
   constructor(
     private readonly prisma: PrismaService,
@@ -33,17 +33,17 @@ export class NotificationService {
     if (!emailRecipient) return false;
 
     const messageContent = `
-      Halo Mitra TenderLens,
+      Halo Mitra SinyalTender,
       
       Tender baru yang sesuai dengan kata kunci pemantauan Anda terdeteksi:
       Judul: ${tenderTitle}
       Pagu Anggaran: Rp ${tenderPagu}
       
-      Selengkapnya silakan akses portal LPSE atau detail analitik TenderLens:
+      Selengkapnya silakan akses portal LPSE atau detail analitik SinyalTender:
       Link: ${tenderUrl}
       
       Salam,
-      TenderLens Procurement Engine
+      SinyalTender Procurement Engine
     `;
 
     try {
@@ -73,7 +73,7 @@ export class NotificationService {
         body: JSON.stringify({
           from: this.mailFrom,
           to: emailRecipient,
-          subject: `[TenderLens Alert] Tender LPSE Baru Terdeteksi - ${tenderTitle.substring(0, 40)}...`,
+          subject: `[SinyalTender Alert] Tender LPSE Baru Terdeteksi - ${tenderTitle.substring(0, 40)}...`,
           text: messageContent,
         }),
       });
@@ -120,7 +120,7 @@ export class NotificationService {
 *Pagu:* Rp ${tenderPagu}
 *Tautan:* [Buka LPSE](${tenderUrl})
 
-_Dikirim otomatis oleh TenderLens Platform_
+_Dikirim otomatis oleh SinyalTender Platform_
     `;
 
     try {

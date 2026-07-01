@@ -21,7 +21,7 @@ export class TelegramController {
   @Get('bot-status')
   getBotStatus() {
     return {
-      botUsername: process.env.TELEGRAM_BOT_USERNAME || 'TenderLensBot',
+      botUsername: process.env.TELEGRAM_BOT_USERNAME || 'SinyalTenderBot',
       polling: this.telegramBotService.isRunning(),
       botTokenSet: !!process.env.TELEGRAM_BOT_TOKEN,
     };
@@ -35,7 +35,7 @@ export class TelegramController {
     });
 
     return {
-      botUsername: process.env.TELEGRAM_BOT_USERNAME || 'TenderLensBot',
+      botUsername: process.env.TELEGRAM_BOT_USERNAME || 'SinyalTenderBot',
       connected: !!tenant?.telegramChatId,
       telegramChatId: tenant?.telegramChatId || null,
       connectedAt: tenant?.telegramConnectedAt || null,

@@ -72,10 +72,7 @@ export default function DashboardLayout({
         {/* Brand header - fixed at top */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
           <Link href="/dashboard" className="flex items-center gap-3" onClick={closeSidebar}>
-            <div className="h-8 w-8 rounded-lg bg-maroon flex items-center justify-center font-bold text-white">
-              TL
-            </div>
-            <span className="text-lg font-bold tracking-tight text-white">TenderLens</span>
+            <img src="/sinyal-tender-logo.png" alt="SinyalTender" className="h-8 w-auto" />
           </Link>
           <button onClick={closeSidebar} className="lg:hidden text-muted-foreground hover:text-white text-lg">✕</button>
         </div>

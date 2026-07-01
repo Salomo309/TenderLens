@@ -9,10 +9,7 @@ export default function LandingPage() {
       {/* Header bar */}
       <header className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-maroon flex items-center justify-center font-bold text-white">
-            TL
-          </div>
-          <span className="text-lg font-bold tracking-tight text-white">TenderLens</span>
+          <img src="/sinyal-tender-logo.png" alt="SinyalTender" className="h-8 w-auto" />
         </div>
         <nav className="flex items-center gap-6">
           <Link href="#features" className="text-sm text-muted-foreground hover:text-white transition-colors">
@@ -43,12 +40,12 @@ export default function LandingPage() {
         </span>
         <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
           Menangkan Tender LPSE <br />
-          <span className="bg-gradient-to-r from-maroon via-[#c94a6a] to-white bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-maroon via-[#e86578] to-white bg-clip-text text-transparent">
             Lebih Cepat dengan AI
           </span>
         </h1>
         <p className="max-w-2xl mx-auto text-muted-foreground text-sm md:text-base leading-relaxed">
-          TenderLens menyaring, meringkas syarat kualifikasi menggunakan Gemini Pro AI, dan mengirimkan alert instan ke Telegram Anda saat ada peluang tender baru.
+          SinyalTender menyaring, meringkas syarat kualifikasi menggunakan Gemini Pro AI, dan mengirimkan alert instan ke Telegram Anda saat ada peluang tender baru.
         </p>
         <div className="flex items-center justify-center gap-4 pt-4">
           <Link
@@ -189,12 +186,12 @@ export default function LandingPage() {
       <section id="faq" className="max-w-4xl mx-auto px-6 py-20 border-t border-border space-y-12">
         <div className="text-center space-y-2">
           <h2 className="text-2xl font-bold text-white">Pertanyaan Umum</h2>
-          <p className="text-muted-foreground text-xs">Informasi yang sering ditanyakan seputar platform TenderLens.</p>
+          <p className="text-muted-foreground text-xs">Informasi yang sering ditanyakan seputar platform SinyalTender.</p>
         </div>
 
         <div className="space-y-4">
           {[
-            { q: 'Apa itu TenderLens?', a: 'TenderLens adalah platform kecerdasan pengadaan LPSE yang memonitor, meringkas, dan mengirimkan notifikasi tender terbaru yang sesuai dengan bisnis Anda secara otomatis.' },
+            { q: 'Apa itu SinyalTender?', a: 'SinyalTender adalah platform kecerdasan pengadaan LPSE yang memonitor, meringkas, dan mengirimkan notifikasi tender terbaru yang sesuai dengan bisnis Anda secara otomatis.' },
             { q: 'Apakah data tender diperbarui secara real-time?', a: 'Ya. Crawler kami berjalan setiap beberapa menit untuk memeriksa portal LPSE nasional dan daerah. Data biasanya muncul dalam 1-5 menit setelah publikasi resmi.' },
             { q: 'Berapa lama uji coba gratisnya?', a: 'Paket Free Trial berlaku selama 30 hari tanpa batasan akses awal. Anda bisa menikmati 10 tender aktif, 1 kata kunci alarm, dan 2 AI Summary per bulan.' },
             { q: 'Apa perbedaan paket Starter, Pro, dan Enterprise?', a: 'Starter (Rp 59rb/bln) untuk perorangan dengan 3 keyword & delay 30 menit. Pro (Rp 109rb/bln) untuk tim kecil dengan 10 keyword real-time & dashboard analitik. Enterprise (Rp 300rb/bln) untuk perusahaan besar dengan unlimited keyword, multi-grup Telegram, prioritas server, dan fitur histori kompetitor.' },
@@ -234,8 +231,8 @@ export default function LandingPage() {
             Punya pertanyaan atau butuh bantuan? Tim kami siap membantu Anda.
           </p>
           <div className="flex items-center justify-center gap-6 pt-2">
-            <a href="mailto:hello@tenderlens.id" className="text-xs text-muted-foreground hover:text-white transition-colors">
-              ✉️ hello@tenderlens.id
+            <a href="mailto:hello@sinyaltender.id" className="text-xs text-muted-foreground hover:text-white transition-colors">
+              ✉️ hello@sinyaltender.id
             </a>
             <span className="text-muted-foreground">|</span>
             <a href="#" className="text-xs text-muted-foreground hover:text-white transition-colors">
@@ -251,7 +248,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-border py-8 text-center text-[10px] text-muted-foreground">
-        © 2026 TenderLens Platform — PT. TenderLens Teknologi Indonesia. All rights reserved. LPSE Crawler Engine.
+        © 2026 SinyalTender Platform — PT. SinyalTender Teknologi Indonesia. All rights reserved. LPSE Crawler Engine.
       </footer>
     </div>
   );

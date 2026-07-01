@@ -1,4 +1,4 @@
-# TenderLens — Test Case Scenarios
+# SinyalTender — Test Case Scenarios
 
 ## Persiapan
 - Backend: `http://localhost:3000`

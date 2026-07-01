@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 
 export default function TelegramPage() {
-  const [botUsername, setBotUsername] = useState('TenderLensBot');
+  const [botUsername, setBotUsername] = useState('SinyalTenderBot');
   const [connected, setConnected] = useState(false);
   const [savedChatId, setSavedChatId] = useState('');
   const [connectedAt, setConnectedAt] = useState<string | null>(null);

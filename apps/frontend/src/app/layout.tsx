@@ -3,7 +3,7 @@ import './globals.css';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'TenderLens - Indonesian LPSE Procurement Intelligence Platform',
+  title: 'SinyalTender - Indonesian LPSE Procurement Intelligence Platform',
   description: 'Track, analyze, and alert procurement tenders from Indonesian government agencies (LPSE).',
 };
 
