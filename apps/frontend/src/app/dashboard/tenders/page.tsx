@@ -5,6 +5,7 @@ import { apiFetch } from '@/lib/api';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDebounce } from '@/lib/use-debounce';
+import { Pagination } from '@/components/ui/pagination';
 
 function useFilterParams() {
   const searchParams = useSearchParams();
@@ -26,6 +27,7 @@ function TendersPageInner() {
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [source, setSource] = useState(searchParams.get('source') || 'ALL');
   const [category, setCategory] = useState(searchParams.get('category') || 'ALL');
   const [stage, setStage] = useState(searchParams.get('stage') || 'ALL');
   const [minPagu, setMinPagu] = useState(searchParams.get('minPagu') || '');
@@ -46,16 +48,24 @@ function TendersPageInner() {
     staleTime: 300000,
   });
 
+  const sourcesQuery = useQuery({
+    queryKey: ['tender-sources'],
+    queryFn: () => apiFetch<{ slug: string; name: string }[]>('/tenders/sources'),
+    staleTime: 300000,
+  });
+
   const tenderParams = useMemo(() => {
     const p = new URLSearchParams();
     p.set('page', String(page));
+    p.set('limit', '20');
     if (debouncedSearch) p.set('search', debouncedSearch);
+    if (source !== 'ALL') p.set('source', source);
     if (category !== 'ALL') p.set('category', category);
     if (stage !== 'ALL') p.set('stage', stage);
     if (debouncedMinPagu) p.set('minPagu', debouncedMinPagu);
     if (debouncedMaxPagu) p.set('maxPagu', debouncedMaxPagu);
     return p.toString();
-  }, [debouncedSearch, category, stage, debouncedMinPagu, debouncedMaxPagu, page]);
+  }, [debouncedSearch, source, category, stage, debouncedMinPagu, debouncedMaxPagu, page]);
 
   const tendersQuery = useQuery({
     queryKey: ['tenders', tenderParams],
@@ -115,11 +125,11 @@ function TendersPageInner() {
 
   useEffect(() => {
     if (tab === 'all') setPage(1);
-  }, [debouncedSearch, category, stage, debouncedMinPagu, debouncedMaxPagu, tab]);
+  }, [debouncedSearch, source, category, stage, debouncedMinPagu, debouncedMaxPagu, tab]);
 
   useEffect(() => {
-    updateUrl({ search: debouncedSearch, category, stage, minPagu: debouncedMinPagu, maxPagu: debouncedMaxPagu, tab });
-  }, [debouncedSearch, category, stage, debouncedMinPagu, debouncedMaxPagu, tab]);
+    updateUrl({ search: debouncedSearch, source, category, stage, minPagu: debouncedMinPagu, maxPagu: debouncedMaxPagu, tab });
+  }, [debouncedSearch, source, category, stage, debouncedMinPagu, debouncedMaxPagu, tab]);
 
   const saveMutation = useMutation({
     mutationFn: (id: string) => apiFetch<{ saved: boolean }>(`/tenders/${id}/save`, { method: 'POST' }),
@@ -131,7 +141,6 @@ function TendersPageInner() {
   });
 
   const handleToggleSave = (id: string) => saveMutation.mutate(id);
-  const handleLoadMore = () => { if (page < totalPages) setPage((p) => p + 1) };
 
   const handleAiSummary = async (tender: any) => {
     if (tender.aiSummary) { setSelectedTender(tender); setSummaryLoading(false); return }
@@ -166,12 +175,22 @@ function TendersPageInner() {
       </div>
 
       {tab === 'all' && (
-        <div className="p-5 rounded-xl border border-border bg-card grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+        <div className="p-5 rounded-xl border border-border bg-card grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
           <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1.5">Pencarian</label>
             <input type="text" placeholder="Cari judul, instansi, atau ID..." value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:border-ring" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Sumber LPSE</label>
+            <select value={source} onChange={(e) => setSource(e.target.value)}
+              className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-ring">
+              <option value="ALL">Semua Sumber</option>
+              {sourcesQuery.data?.map((s) => (
+                <option key={s.slug} value={s.slug}>{s.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1.5">Kategori</label>
@@ -275,14 +294,8 @@ function TendersPageInner() {
           </tbody>
         </table>
 
-        {tab === 'all' && page < totalPages && !loading && (
-          <div className="p-4 border-t border-border text-center">
-            <button onClick={handleLoadMore} disabled={tendersQuery.isFetching}
-              className="px-6 py-2 bg-maroon-darker hover:bg-maroon-dark border border-border text-foreground text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 mx-auto">
-              {tendersQuery.isFetching ? <span className="h-4 w-4 border-2 border-neutral-400 border-t-transparent rounded-full animate-spin" /> : null}
-              Muat Lainnya ({totalPages - page} halaman lagi)
-            </button>
-          </div>
+        {tab === 'all' && !loading && (
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         )}
       </div>
 

@@ -25,6 +25,16 @@ export class TendersController {
     return values.map((v) => ({ value: v, label: v.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) }));
   }
 
+  @ApiOperation({ summary: 'Get active LPSE sources for filter dropdown' })
+  @Get('sources')
+  async getSources() {
+    return this.prisma.lpseSource.findMany({
+      where: { isActive: true },
+      select: { slug: true, name: true, location: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
   @ApiOperation({ summary: 'Search and filter LPSE tenders with pagination' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
@@ -34,6 +44,7 @@ export class TendersController {
   @ApiQuery({ name: 'minPagu', required: false })
   @ApiQuery({ name: 'maxPagu', required: false })
   @ApiQuery({ name: 'location', required: false })
+  @ApiQuery({ name: 'source', required: false })
   @Get()
   async getTenders(
     @Query('page') page?: number,
@@ -44,6 +55,7 @@ export class TendersController {
     @Query('minPagu') minPagu?: number,
     @Query('maxPagu') maxPagu?: number,
     @Query('location') location?: string,
+    @Query('source') source?: string,
   ) {
     return this.tendersService.findAll({
       page,
@@ -54,6 +66,7 @@ export class TendersController {
       minPagu,
       maxPagu,
       location,
+      source,
     });
   }
 

@@ -12,6 +12,7 @@ export interface QueryTendersDto {
   minPagu?: number;
   maxPagu?: number;
   location?: string;
+  source?: string;
 }
 
 @Injectable()
@@ -49,6 +50,10 @@ export class TendersService {
 
     if (query.location) {
       where.location = { contains: query.location, mode: 'insensitive' };
+    }
+
+    if (query.source) {
+      where.lpseId = { startsWith: query.source + '_' };
     }
 
     if (query.minPagu || query.maxPagu) {

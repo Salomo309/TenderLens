@@ -5,3 +5,4 @@ export { ToastProvider, useToast } from './toast';
 export { Modal } from './modal';
 export { Table } from './table';
 export { Spinner } from './spinner';
+export { Pagination } from './pagination';

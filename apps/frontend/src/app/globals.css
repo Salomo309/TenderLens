@@ -57,9 +57,9 @@
 
 /* Custom premium styling features */
 .glassmorphism {
-  background: rgba(20, 11, 15, 0.7);
+  background: rgba(24, 14, 18, 0.7);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(168, 50, 84, 0.15);
+  border: 1px solid rgba(216, 74, 102, 0.15);
 }
 
 .gradient-text {
