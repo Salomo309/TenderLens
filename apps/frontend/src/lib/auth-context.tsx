@@ -2,7 +2,7 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { authApi, AuthResponse } from './api';
+import { authApi, AuthResponse, ApiError } from './api';
 
 interface UserInfo {
   id: string;
@@ -25,6 +25,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (data: { companyName: string; adminName: string; email: string; password: string }) => Promise<void>;
   logout: () => void;
+  getToken: () => string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -69,6 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [hydrate]);
 
+  const getToken = () => token;
+
   const handleAuthResponse = (res: AuthResponse) => {
     localStorage.setItem('token', res.access_token);
     setCookie(res.access_token);
@@ -97,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, tenant, token, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, tenant, token, isLoading, login, register, logout, getToken }}>
       {children}
     </AuthContext.Provider>
   );
