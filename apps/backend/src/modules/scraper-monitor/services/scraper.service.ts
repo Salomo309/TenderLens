@@ -13,13 +13,26 @@ interface LpseSource {
   location: string;
 }
 
-const LPSE_SOURCES: LpseSource[] = [
+const DEFAULT_LPSE_SOURCES: LpseSource[] = [
   { name: 'LPSE Kemenkeu', baseUrl: 'https://lpse.kemenkeu.go.id', slug: 'LPSE_KEMEN_KEU', location: 'DKI Jakarta' },
   { name: 'LPSE Kemen PUPR', baseUrl: 'https://lpse.pu.go.id', slug: 'LPSE_KEMEN_PUPR', location: 'DKI Jakarta' },
   { name: 'LPSE DKI Jakarta', baseUrl: 'https://lpse.jakarta.go.id', slug: 'LPSE_DKI_JAKARTA', location: 'DKI Jakarta' },
   { name: 'LPSE Jawa Barat', baseUrl: 'https://lpse.jabarprov.go.id', slug: 'LPSE_JAWA_BARAT', location: 'Jawa Barat' },
   { name: 'LPSE Surabaya', baseUrl: 'https://lpse.surabaya.go.id', slug: 'LPSE_SURABAYA', location: 'Jawa Timur' },
 ];
+
+function getLpseSources(): LpseSource[] {
+  const env = process.env.LPSE_URLS;
+  if (env) {
+    try {
+      const parsed: LpseSource[] = JSON.parse(env);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    } catch { /* ignore invalid JSON, fall back to defaults */ }
+  }
+  return DEFAULT_LPSE_SOURCES;
+}
 
 const STAGE_MAP: Record<string, TenderStage> = {
   'pengumuman': TenderStage.PENGUMUMAN,
@@ -88,9 +101,10 @@ export class ScraperService {
 
     this.isScraping = true;
     try {
+      const sources = getLpseSources();
       const results = await Promise.allSettled(
-      LPSE_SOURCES.map((source) => this.scrapeSource(source))
-    );
+        sources.map((source) => this.scrapeSource(source))
+      );
 
     const totalNew = results.reduce((sum, r) => {
       if (r.status === 'fulfilled') return sum + r.value;
@@ -317,18 +331,27 @@ export class ScraperService {
       `${source.baseUrl}/eproc4/lelang`,
       `${source.baseUrl}/eproc4/lelang/index`,
       `${source.baseUrl}/eproc4`,
+      `${source.baseUrl}`,
     ];
 
     for (const url of urls) {
-      try {
-        const html = await this.fetchPageWithRetry(url);
-        if (!html || html.length < 500) continue;
-
-        const result = this.parseTenderTable(html, source);
-        if (result.length > 0) return result;
-      } catch {
+      const html = await this.fetchPageWithRetry(url);
+      if (!html) {
+        this.logger.warn(`[${source.slug}] No response from ${url}`);
         continue;
       }
+      if (html.length < 500) {
+        this.logger.warn(`[${source.slug}] Response too short (${html.length} chars) from ${url}`);
+        continue;
+      }
+
+      this.logger.log(`[${source.slug}] Got ${html.length} chars from ${url}, parsing...`);
+      const result = this.parseTenderTable(html, source);
+      if (result.length > 0) {
+        this.logger.log(`[${source.slug}] Parsed ${result.length} tenders from ${url}`);
+        return result;
+      }
+      this.logger.warn(`[${source.slug}] Parsed 0 tenders from ${url}, trying next URL...`);
     }
 
     return [];
@@ -338,19 +361,24 @@ export class ScraperService {
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const response = await axios.get(url, {
-          timeout: 10000,
+          timeout: 15000,
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
           },
           maxRedirects: 5,
-          validateStatus: (status) => status < 500,
+          validateStatus: (status) => status >= 200 && status < 300,
         });
         return response.data;
-      } catch {
+      } catch (err: any) {
+        const status = err?.response?.status;
+        const msg = err?.response?.statusText || err?.code || err?.message || 'Unknown error';
+        this.logger.warn(`fetchPage attempt ${attempt + 1}/${retries + 1} failed for ${url}: ${status ? `HTTP ${status} ${msg}` : msg}`);
         if (attempt < retries) {
-          await new Promise((resolve) => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+          const delay = Math.pow(2, attempt) * 1000;
+          this.logger.log(`Retrying in ${delay}ms...`);
+          await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
         }
         return null;

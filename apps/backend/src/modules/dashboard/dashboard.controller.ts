@@ -48,7 +48,7 @@ export class DashboardController {
       }))),
     ]);
 
-    const crawlers = ['LPSE_KEMEN_KEU', 'LPSE_KEMEN_PUPR', 'LPSE_DKI_JAKARTA', 'LPSE_JAWA_BARAT'];
+    const crawlers = ['LPSE_KEMEN_KEU', 'LPSE_KEMEN_PUPR', 'LPSE_DKI_JAKARTA', 'LPSE_JAWA_BARAT', 'LPSE_SURABAYA'];
     const crawlerData = await Promise.all(
       crawlers.map(async (name) => {
         const logs = await this.prisma.scraperLog.findMany({

@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, UseGuards, Body, HttpException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from '../prisma/prisma.service';
 import { ScraperStatus } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ScraperService } from './services/scraper.service';
+import axios from 'axios';
 
 @ApiTags('scraper')
 @ApiBearerAuth()
@@ -97,5 +98,37 @@ export class ScraperMonitorController {
       updatedAt: new Date().toISOString(),
       crawlers: healthReports,
     };
+  }
+
+  @ApiOperation({ summary: 'Debug: test-fetch a URL and return response info (SUPERADMIN only)' })
+  @Post('debug-fetch')
+  async debugFetch(@Body() body: { url: string }) {
+    if (!body.url) throw new HttpException('URL required', 400);
+    try {
+      const response = await axios.get(body.url, {
+        timeout: 15000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+        },
+        maxRedirects: 5,
+        validateStatus: () => true,
+      });
+      return {
+        url: body.url,
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+        contentLength: (response.data || '').length,
+        contentType: response.headers['content-type'],
+        preview: (response.data || '').substring(0, 3000),
+      };
+    } catch (err: any) {
+      return {
+        url: body.url,
+        error: err?.code || err?.message || 'Unknown error',
+      };
+    }
   }
 }
