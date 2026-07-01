@@ -378,9 +378,9 @@ export class ScraperService {
     token: string,
     cookies: string,
     start: number,
-    length = 100,
+    length = 200,
   ): Promise<TenderParseResult[]> {
-    const apiUrl = `${source.baseUrl}/dt/lelang?tahun=2027`;
+    const apiUrl = `${source.baseUrl}/dt/lelang?tahun=2026`;
     const body = new URLSearchParams({
       authenticityToken: token,
       draw: '1',
@@ -404,8 +404,9 @@ export class ScraperService {
     const rawRows: any[][] = data.data || [];
     const tenders = rawRows.map((row) => this.parseApiRow(row, source));
 
-    const total = data.recordsFiltered || 0;
-    if (total > start + length) {
+    // Stop pagination when fewer rows returned than requested (end of data)
+    // recordsFiltered returns MAX_INT placeholder, so we can't rely on it
+    if (rawRows.length === length) {
       const remaining = await this.fetchTendersPage(source, token, cookies, start + length, length);
       tenders.push(...remaining);
     }

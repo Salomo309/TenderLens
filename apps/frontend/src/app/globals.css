@@ -1,33 +1,33 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #0d080a;
-  --color-foreground: #f5f0f1;
+  --color-background: #120a0d;
+  --color-foreground: #f7f0f2;
 
-  --color-card: #140b0f;
-  --color-card-foreground: #f5f0f1;
+  --color-card: #180e12;
+  --color-card-foreground: #f7f0f2;
 
-  --color-popover: #140b0f;
-  --color-popover-foreground: #f5f0f1;
+  --color-popover: #180e12;
+  --color-popover-foreground: #f7f0f2;
 
-  --color-primary: #8b2a45;
-  --color-primary-foreground: #f5f0f1;
+  --color-primary: #d14a66;
+  --color-primary-foreground: #f7f0f2;
 
-  --color-secondary: #2a1219;
-  --color-secondary-foreground: #f5f0f1;
+  --color-secondary: #30121d;
+  --color-secondary-foreground: #f7f0f2;
 
-  --color-muted: #2a1219;
-  --color-muted-foreground: #a0878d;
+  --color-muted: #30121d;
+  --color-muted-foreground: #b8989e;
 
-  --color-accent: #441a28;
-  --color-accent-foreground: #f5f0f1;
+  --color-accent: #4d1c2e;
+  --color-accent-foreground: #f7f0f2;
 
-  --color-destructive: hsl(0 62.8% 30.6%);
-  --color-destructive-foreground: #f5f0f1;
+  --color-destructive: #7f1d2b;
+  --color-destructive-foreground: #f7f0f2;
 
-  --color-border: #2e141e;
-  --color-input: #1f0d12;
-  --color-ring: #8b2a45;
+  --color-border: #3d1a24;
+  --color-input: #241016;
+  --color-ring: #d14a66;
   
   --radius-lg: 0.75rem;
   --radius-md: calc(0.75rem - 2px);
@@ -47,13 +47,13 @@
   }
 }
 
-/* Maroon color utility */
-.bg-maroon { background-color: #8b2a45; }
-.bg-maroon-dark { background-color: #5c1f31; }
-.bg-maroon-darker { background-color: #2e141e; }
-.text-maroon { color: #a83254; }
-.border-maroon { border-color: #5c1f31; }
-.hover\:bg-maroon-dark:hover { background-color: #5c1f31; }
+/* Crimson color utility */
+.bg-maroon { background-color: #d14a66; }
+.bg-maroon-dark { background-color: #b02a48; }
+.bg-maroon-darker { background-color: #3d1a24; }
+.text-maroon { color: #e86882; }
+.border-maroon { border-color: #b02a48; }
+.hover\:bg-maroon-dark:hover { background-color: #b02a48; }
 
 /* Custom premium styling features */
 .glassmorphism {
@@ -63,7 +63,7 @@
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #f5f0f1 0%, #a83254 100%);
+  background: linear-gradient(135deg, #f7f0f2 0%, #e86882 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
