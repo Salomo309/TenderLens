@@ -1,33 +1,33 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: hsl(240 10% 3.9%);
-  --color-foreground: hsl(0 0% 98%);
+  --color-background: #0d080a;
+  --color-foreground: #f5f0f1;
 
-  --color-card: hsl(240 10% 3.9%);
-  --color-card-foreground: hsl(0 0% 98%);
+  --color-card: #140b0f;
+  --color-card-foreground: #f5f0f1;
 
-  --color-popover: hsl(240 10% 3.9%);
-  --color-popover-foreground: hsl(0 0% 98%);
+  --color-popover: #140b0f;
+  --color-popover-foreground: #f5f0f1;
 
-  --color-primary: hsl(0 0% 98%);
-  --color-primary-foreground: hsl(240 5.9% 10%);
+  --color-primary: #8b2a45;
+  --color-primary-foreground: #f5f0f1;
 
-  --color-secondary: hsl(240 3.7% 15.9%);
-  --color-secondary-foreground: hsl(0 0% 98%);
+  --color-secondary: #2a1219;
+  --color-secondary-foreground: #f5f0f1;
 
-  --color-muted: hsl(240 3.7% 15.9%);
-  --color-muted-foreground: hsl(240 5% 64.9%);
+  --color-muted: #2a1219;
+  --color-muted-foreground: #a0878d;
 
-  --color-accent: hsl(240 3.7% 15.9%);
-  --color-accent-foreground: hsl(0 0% 98%);
+  --color-accent: #441a28;
+  --color-accent-foreground: #f5f0f1;
 
   --color-destructive: hsl(0 62.8% 30.6%);
-  --color-destructive-foreground: hsl(0 0% 98%);
+  --color-destructive-foreground: #f5f0f1;
 
-  --color-border: hsl(240 3.7% 15.9%);
-  --color-input: hsl(240 3.7% 15.9%);
-  --color-ring: hsl(240 4.9% 83.9%);
+  --color-border: #2e141e;
+  --color-input: #1f0d12;
+  --color-ring: #8b2a45;
   
   --radius-lg: 0.75rem;
   --radius-md: calc(0.75rem - 2px);
@@ -47,15 +47,23 @@
   }
 }
 
+/* Maroon color utility */
+.bg-maroon { background-color: #8b2a45; }
+.bg-maroon-dark { background-color: #5c1f31; }
+.bg-maroon-darker { background-color: #2e141e; }
+.text-maroon { color: #a83254; }
+.border-maroon { border-color: #5c1f31; }
+.hover\:bg-maroon-dark:hover { background-color: #5c1f31; }
+
 /* Custom premium styling features */
 .glassmorphism {
-  background: rgba(15, 15, 20, 0.7);
+  background: rgba(20, 11, 15, 0.7);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(168, 50, 84, 0.15);
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #ffffff 0%, #a3a3a3 100%);
+  background: linear-gradient(135deg, #f5f0f1 0%, #a83254 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

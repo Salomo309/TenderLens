@@ -24,14 +24,14 @@ export default function DashboardPage() {
   );
 
   if (!stats) return (
-    <div className="text-center py-20 text-neutral-500 text-sm">Gagal memuat data dashboard.</div>
+    <div className="text-center py-20 text-muted-foreground text-sm">Gagal memuat data dashboard.</div>
   );
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-extrabold tracking-tight text-white gradient-text">Dashboard Overview</h1>
-        <p className="text-neutral-400 text-sm">Ringkasan aktivitas tender, pemantau kata kunci, dan kesehatan crawler LPSE.</p>
+        <p className="text-muted-foreground text-sm">Ringkasan aktivitas tender, pemantau kata kunci, dan kesehatan crawler LPSE.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -41,75 +41,75 @@ export default function DashboardPage() {
           { label: 'Scraper Uptime', value: `${stats.scraperUptime}%`, sub: `${stats.activeCrawlers} crawler aktif`, icon: '📡' },
           { label: 'Status Platform', value: stats.platformStatus, sub: stats.lastSync ? `Last sync: ${new Date(stats.lastSync).toLocaleString('id-ID')}` : 'No sync data', icon: '⚡', green: stats.platformStatus === 'OPERATIONAL' },
         ].map((item) => (
-          <div key={item.label} className="p-5 rounded-xl border border-neutral-800 bg-[#0c0c0e]">
+          <div key={item.label} className="p-5 rounded-xl border border-border bg-card">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-neutral-500 font-medium uppercase tracking-wider">{item.label}</span>
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{item.label}</span>
               <span className="text-lg">{item.icon}</span>
             </div>
             <div className={`text-2xl font-bold font-mono ${item.green ? 'text-emerald-400 flex items-center gap-2' : 'text-white'}`}>
               {item.green && <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block" />}
               {item.value}
             </div>
-            <div className={`text-[11px] mt-1 ${item.green ? 'text-neutral-400' : 'text-emerald-400'}`}>{item.sub}</div>
+            <div className={`text-[11px] mt-1 ${item.green ? 'text-muted-foreground' : 'text-emerald-400'}`}>{item.sub}</div>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 rounded-xl border border-neutral-800 bg-[#0c0c0e] overflow-hidden">
-          <div className="p-4 border-b border-neutral-800 bg-neutral-900/20 flex items-center justify-between">
+        <div className="lg:col-span-2 rounded-xl border border-border bg-card overflow-hidden">
+          <div className="p-4 border-b border-border bg-maroon-darker/30 flex items-center justify-between">
             <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Tender Terbaru</h3>
           </div>
           {stats.recentTenders?.length > 0 ? (
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-neutral-800 text-[10px] text-neutral-500 uppercase font-semibold">
+                <tr className="border-b border-border text-[10px] text-muted-foreground uppercase font-semibold">
                   <th className="p-3">Instansi</th>
                   <th className="p-3">Judul</th>
                   <th className="p-3">Pagu</th>
                   <th className="p-3">Tahap</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-800/60 text-xs text-neutral-300">
+              <tbody className="divide-y divide-border text-xs text-foreground">
                 {stats.recentTenders.map((t: any) => (
-                  <tr key={t.id} className="hover:bg-neutral-900/10">
-                    <td className="p-3 text-neutral-400 max-w-[120px] truncate">{t.agency}</td>
-                    <td className="p-3 font-medium text-neutral-200 max-w-[200px] truncate">{t.title}</td>
-                    <td className="p-3 font-mono text-neutral-200">{formatCurrency(Number(t.pagu))}</td>
+                  <tr key={t.id} className="hover:bg-maroon-darker/30">
+                    <td className="p-3 text-muted-foreground max-w-[120px] truncate">{t.agency}</td>
+                    <td className="p-3 font-medium text-foreground max-w-[200px] truncate">{t.title}</td>
+                    <td className="p-3 font-mono text-foreground">{formatCurrency(Number(t.pagu))}</td>
                     <td className="p-3">
-                      <span className="px-1.5 py-0.5 rounded bg-neutral-800 text-[10px] font-mono text-neutral-300">{t.stage}</span>
+                      <span className="px-1.5 py-0.5 rounded bg-maroon-darker text-[10px] font-mono text-foreground">{t.stage}</span>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
-            <div className="p-8 text-center text-xs text-neutral-500">Belum ada tender.</div>
+            <div className="p-8 text-center text-xs text-muted-foreground">Belum ada tender.</div>
           )}
         </div>
 
-        <div className="rounded-xl border border-neutral-800 bg-[#0c0c0e] overflow-hidden">
-          <div className="p-4 border-b border-neutral-800 bg-neutral-900/20">
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="p-4 border-b border-border bg-maroon-darker/30">
             <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Aktivitas Keyword</h3>
           </div>
           {stats.keywordActivity?.length > 0 ? (
-            <div className="divide-y divide-neutral-800/60">
+            <div className="divide-y divide-border">
               {stats.keywordActivity.map((k: any, i: number) => (
                 <div key={i} className="p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-white">{k.keyword}</span>
-                    <span className="text-[10px] text-neutral-500 font-mono">{k.count} cocok</span>
+                    <span className="text-[10px] text-muted-foreground font-mono">{k.count} cocok</span>
                   </div>
                   <div className="flex gap-1.5">
                     {k.channels?.map((ch: string) => (
-                      <span key={ch} className="px-1.5 py-0.5 rounded bg-neutral-800 text-[9px] font-mono text-neutral-400">{ch}</span>
+                      <span key={ch} className="px-1.5 py-0.5 rounded bg-maroon-darker text-[9px] font-mono text-muted-foreground">{ch}</span>
                     ))}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="p-6 text-center text-xs text-neutral-500">Belum ada aktivitas keyword.</div>
+            <div className="p-6 text-center text-xs text-muted-foreground">Belum ada aktivitas keyword.</div>
           )}
         </div>
       </div>

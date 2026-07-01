@@ -45,32 +45,29 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    setError('');
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setIsLoading(false);
-    router.push('/dashboard');
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+    window.location.href = `${apiBase}/auth/google`;
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-neutral-100 flex items-center justify-center p-6 antialiased">
-      <div className="w-full max-w-md bg-[#0c0c0e] border border-neutral-800 rounded-2xl p-8 space-y-6">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6 antialiased">
+      <div className="w-full max-w-md bg-card border border-border rounded-2xl p-8 space-y-6">
         {/* Brand header */}
         <div className="flex flex-col items-center space-y-2">
           <Link href="/" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center font-bold text-[#09090b]">
+            <div className="h-8 w-8 rounded-lg bg-maroon flex items-center justify-center font-bold text-white">
               TL
             </div>
             <span className="text-lg font-bold tracking-tight text-white">TenderLens</span>
           </Link>
           <h2 className="text-xl font-bold text-white pt-2">Masuk ke Akun Anda</h2>
-          <p className="text-xs text-neutral-500 text-center">
+          <p className="text-xs text-muted-foreground text-center">
             Gunakan credentials perusahaan Anda untuk mengakses data monitoring LPSE.
           </p>
         </div>
 
         {error && (
-          <div className="p-3 rounded-lg bg-red-950 border border-red-800 text-xs text-red-300 flex items-center gap-2">
+          <div className="p-3 rounded-lg bg-red-950 border border-destructive text-xs text-red-300 flex items-center gap-2">
             <span>⚠️</span>
             <span>{error}</span>
           </div>
@@ -78,13 +75,13 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-neutral-400 mb-1.5">Alamat Email</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Alamat Email</label>
             <input
               type="email"
               placeholder="nama@perusahaan.co.id"
               value={email}
               onChange={(e) => { setEmail(e.target.value); setError(''); }}
-              className="w-full bg-[#121214] border border-neutral-800 rounded-lg px-3 py-2 text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-700 transition-colors"
+              className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:border-ring transition-colors"
               required
               autoComplete="email"
             />
@@ -92,8 +89,8 @@ export default function LoginPage() {
 
           <div>
             <div className="flex justify-between items-center mb-1.5">
-              <label className="block text-xs font-medium text-neutral-400">Kata Sandi</label>
-              <a href="#" className="text-[10px] text-neutral-500 hover:text-white transition-colors">
+              <label className="block text-xs font-medium text-muted-foreground">Kata Sandi</label>
+              <a href="#" className="text-[10px] text-muted-foreground hover:text-white transition-colors">
                 Lupa Sandi?
               </a>
             </div>
@@ -103,26 +100,26 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                className="w-full bg-[#121214] border border-neutral-800 rounded-lg px-3 py-2 pr-8 text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-700 transition-colors"
+                className="w-full bg-input border border-border rounded-lg px-3 py-2 pr-8 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:border-ring transition-colors"
                 required
                 autoComplete="current-password"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white text-xs"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white text-xs"
               >
                 {showPassword ? '🙈' : '👁️'}
               </button>
             </div>
           </div>
 
-          <label className="flex items-center gap-2 text-xs text-neutral-400 cursor-pointer">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
             <input
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="rounded accent-white"
+              className="rounded accent-maroon"
             />
             Ingat saya
           </label>
@@ -130,10 +127,10 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-white hover:bg-neutral-200 text-neutral-900 font-semibold py-2.5 text-sm rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-maroon hover:bg-maroon-dark text-white font-semibold py-2.5 text-sm rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
-              <span className="h-4 w-4 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin"></span>
+              <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
             ) : (
               'Masuk Sekarang'
             )}
@@ -141,20 +138,20 @@ export default function LoginPage() {
         </form>
 
         <div className="relative flex py-2 items-center">
-          <div className="flex-grow border-t border-neutral-900"></div>
-          <span className="flex-shrink mx-4 text-[10px] text-neutral-600 uppercase">Atau</span>
-          <div className="flex-grow border-t border-neutral-900"></div>
+          <div className="flex-grow border-t border-border"></div>
+          <span className="flex-shrink mx-4 text-[10px] text-muted-foreground uppercase">Atau</span>
+          <div className="flex-grow border-t border-border"></div>
         </div>
 
         <button
           onClick={handleGoogleLogin}
           disabled={isLoading}
-          className="w-full bg-[#0c0c0e] hover:bg-neutral-900 border border-neutral-800 py-2.5 rounded-lg text-sm text-neutral-200 font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-card hover:bg-maroon-darker border border-border py-2.5 rounded-lg text-sm text-foreground font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           🔑 Masuk dengan Akun Google
         </button>
 
-        <div className="text-center text-xs text-neutral-500 pt-2">
+        <div className="text-center text-xs text-muted-foreground pt-2">
           Belum terdaftar?{' '}
           <Link href="/register" className="text-white hover:underline font-semibold">
             Buat akun perusahaan gratis

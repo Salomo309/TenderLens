@@ -69,11 +69,11 @@ export default function ScraperMonitorPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-extrabold tracking-tight text-white gradient-text">Scraper Monitor</h1>
-        <p className="text-neutral-400 text-sm">Panel pemantauan status kesehatan, waktu aktif (uptime), dan catatan performa crawler LPSE.</p>
+        <p className="text-muted-foreground text-sm">Panel pemantauan status kesehatan, waktu aktif (uptime), dan catatan performa crawler LPSE.</p>
       </div>
 
       {actionMsg && (
-        <div className="p-4 rounded-xl border border-neutral-800 bg-[#0c0c0e] text-xs text-neutral-300">
+        <div className="p-4 rounded-xl border border-border bg-card text-xs text-foreground">
           {actionMsg}
         </div>
       )}
@@ -82,14 +82,14 @@ export default function ScraperMonitorPage() {
         <button
           onClick={handleTriggerScrape}
           disabled={triggering}
-          className="px-4 py-2 bg-white hover:bg-neutral-200 text-neutral-900 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+          className="px-4 py-2 bg-maroon hover:bg-maroon-dark text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
         >
-          {triggering ? <span className="h-4 w-4 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin" /> : '📡 Scrape LPSE Sekarang'}
+          {triggering ? <span className="h-4 w-4 border-2 border-border border-t-transparent rounded-full animate-spin" /> : '📡 Scrape LPSE Sekarang'}
         </button>
         <button
           onClick={handleSeedData}
           disabled={seeding}
-          className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+          className="px-4 py-2 bg-maroon-darker hover:bg-maroon-dark border border-border text-foreground text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
         >
           {seeding ? <span className="h-4 w-4 border-2 border-neutral-400 border-t-transparent rounded-full animate-spin" /> : '🌱 Semai Data Mock (Seed)'}
         </button>
@@ -98,16 +98,16 @@ export default function ScraperMonitorPage() {
       {health && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {health.crawlers?.map((crawler: any) => (
-            <div key={crawler.crawlerName} className="p-5 rounded-xl border border-neutral-800 bg-[#0c0c0e] flex flex-col justify-between">
+            <div key={crawler.crawlerName} className="p-5 rounded-xl border border-border bg-card flex flex-col justify-between">
               <div className="space-y-1">
-                <span className="text-[10px] font-semibold text-neutral-500 font-mono">CRAWLER AGENT</span>
+                <span className="text-[10px] font-semibold text-muted-foreground font-mono">CRAWLER AGENT</span>
                 <h3 className="text-sm font-bold text-white truncate">{crawler.crawlerName}</h3>
               </div>
               <div className="my-4 flex items-baseline justify-between">
                 <span className="text-2xl font-bold font-mono tracking-tight text-white">{crawler.uptime}%</span>
-                <span className="text-xs text-neutral-400">Uptime</span>
+                <span className="text-xs text-muted-foreground">Uptime</span>
               </div>
-              <div className="border-t border-neutral-900 pt-3 space-y-1 text-[11px] text-neutral-500">
+              <div className="border-t border-border pt-3 space-y-1 text-[11px] text-muted-foreground">
                 <div className="flex items-center justify-between">
                   <span>Runs: {crawler.totalRuns}</span>
                   <span className={`font-semibold ${crawler.currentStatus === 'SUCCESS' ? 'text-emerald-400' : 'text-amber-400'}`}>
@@ -119,7 +119,7 @@ export default function ScraperMonitorPage() {
                   <span>Failed: {crawler.failedRuns}</span>
                 </div>
                 {crawler.lastActive && (
-                  <div className="text-[10px] text-neutral-600">
+                  <div className="text-[10px] text-muted-foreground">
                     Last active: {new Date(crawler.lastActive).toLocaleString('id-ID')}
                   </div>
                 )}
@@ -129,14 +129,14 @@ export default function ScraperMonitorPage() {
         </div>
       )}
 
-      <div className="rounded-xl border border-neutral-800 bg-[#0c0c0e] overflow-hidden">
-        <div className="p-4 border-b border-neutral-800 bg-neutral-900/20 flex items-center justify-between">
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="p-4 border-b border-border bg-maroon-darker/30 flex items-center justify-between">
           <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Scraper Execution Logs</h3>
-          <button onClick={fetchData} className="text-xs text-neutral-400 hover:text-white transition-colors">↻ Refresh</button>
+          <button onClick={fetchData} className="text-xs text-muted-foreground hover:text-white transition-colors">↻ Refresh</button>
         </div>
         <table className="w-full text-left">
           <thead>
-            <tr className="border-b border-neutral-800 text-xs text-neutral-500 uppercase font-semibold">
+            <tr className="border-b border-border text-xs text-muted-foreground uppercase font-semibold">
               <th className="p-4">Crawler</th>
               <th className="p-4">Status</th>
               <th className="p-4">Item Terserap</th>
@@ -144,13 +144,13 @@ export default function ScraperMonitorPage() {
               <th className="p-4">Catatan Error</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-800 text-xs text-neutral-300">
+          <tbody className="divide-y divide-neutral-800 text-xs text-foreground">
             {logs.length === 0 ? (
-              <tr><td colSpan={5} className="p-8 text-center text-neutral-500">Belum ada log scraper.</td></tr>
+              <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Belum ada log scraper.</td></tr>
             ) : (
               logs.map((log: any) => (
-                <tr key={log.id} className="hover:bg-neutral-900/10">
-                  <td className="p-4 font-mono font-medium text-neutral-200">{log.crawlerName}</td>
+                <tr key={log.id} className="hover:bg-maroon-darker/30">
+                  <td className="p-4 font-mono font-medium text-foreground">{log.crawlerName}</td>
                   <td className="p-4">
                     <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold ${
                       log.status === 'SUCCESS'
@@ -161,8 +161,8 @@ export default function ScraperMonitorPage() {
                     }`}>{log.status}</span>
                   </td>
                   <td className="p-4 font-mono font-semibold">{log.itemsCrawled} Tenders</td>
-                  <td className="p-4 font-mono text-neutral-400">{new Date(log.startedAt).toLocaleString('id-ID')}</td>
-                  <td className="p-4 max-w-xs truncate text-neutral-500 font-mono">{log.errorMessage || '-'}</td>
+                  <td className="p-4 font-mono text-muted-foreground">{new Date(log.startedAt).toLocaleString('id-ID')}</td>
+                  <td className="p-4 max-w-xs truncate text-muted-foreground font-mono">{log.errorMessage || '-'}</td>
                 </tr>
               ))
             )}

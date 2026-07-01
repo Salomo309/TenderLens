@@ -111,65 +111,65 @@ export default function SettingsPage() {
     setSavingPw(false);
   };
 
-  const inputClass = "w-full bg-[#121214] border border-neutral-800 rounded-lg px-3 py-2 text-sm text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-neutral-700";
+  const inputClass = "w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:border-ring";
 
   return (
     <div className="space-y-8 max-w-2xl">
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-extrabold tracking-tight text-white gradient-text">Account Settings</h1>
-        <p className="text-neutral-400 text-sm">Kelola profil akun, email, dan keamanan Anda.</p>
+        <p className="text-muted-foreground text-sm">Kelola profil akun, email, dan keamanan Anda.</p>
       </div>
 
       {/* Profile Section */}
-      <div className="rounded-xl border border-neutral-800 bg-[#0c0c0e] overflow-hidden">
-        <div className="p-4 border-b border-neutral-800 bg-neutral-900/20">
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="p-4 border-b border-border bg-maroon-darker/30">
           <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Profil</h3>
         </div>
         <form onSubmit={handleSaveProfile} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-neutral-400 mb-1.5">Nama</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Nama</label>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-400 mb-1.5">Email</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Email</label>
             <input type="email" value={authUser?.email || ''} disabled className={`${inputClass} opacity-50 cursor-not-allowed`} />
-            <p className="text-[10px] text-neutral-500 mt-1">Gunakan form di bawah untuk mengganti email.</p>
+            <p className="text-[10px] text-muted-foreground mt-1">Gunakan form di bawah untuk mengganti email.</p>
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-400 mb-1.5">Tenant</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Tenant</label>
             <input type="text" value={tenant?.name || ''} disabled className={`${inputClass} opacity-50 cursor-not-allowed`} />
           </div>
           {profileMsg && (
             <div className={`text-xs ${profileMsg.includes('berhasil') ? 'text-emerald-400' : 'text-red-400'}`}>{profileMsg}</div>
           )}
           <button type="submit" disabled={savingProfile}
-            className="px-5 py-2 bg-white hover:bg-neutral-200 text-neutral-900 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50">
+            className="px-5 py-2 bg-maroon hover:bg-maroon-dark text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50">
             {savingProfile ? 'Menyimpan...' : 'Simpan Profil'}
           </button>
         </form>
       </div>
 
       {/* Email Section */}
-      <div className="rounded-xl border border-neutral-800 bg-[#0c0c0e] overflow-hidden">
-        <div className="p-4 border-b border-neutral-800 bg-neutral-900/20">
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="p-4 border-b border-border bg-maroon-darker/30">
           <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Ganti Email</h3>
         </div>
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-neutral-400 mb-1.5">Email Baru</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Email Baru</label>
             <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
               className={inputClass} placeholder="email-baru@domain.com" />
           </div>
 
           {showVerifInput && (
-            <div className="p-4 rounded-lg border border-neutral-700 bg-neutral-900/50 space-y-3">
-              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Kode Verifikasi</label>
-              <p className="text-[10px] text-neutral-500">Cek email Anda saat ini untuk kode verifikasi.</p>
+            <div className="p-4 rounded-lg border border-border bg-maroon-darker/50 space-y-3">
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Kode Verifikasi</label>
+              <p className="text-[10px] text-muted-foreground">Cek email Anda saat ini untuk kode verifikasi.</p>
               <div className="flex gap-3">
                 <input type="text" value={verifCode} onChange={(e) => setVerifCode(e.target.value)}
                   className={`${inputClass} flex-1 font-mono uppercase tracking-widest`} placeholder="XXXXXX" maxLength={6} />
                 <button onClick={handleVerifyEmail} disabled={savingEmail || !verifCode}
-                  className="px-4 py-2 bg-white hover:bg-neutral-200 text-neutral-900 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50">
+                  className="px-4 py-2 bg-maroon hover:bg-maroon-dark text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50">
                   Verifikasi
                 </button>
               </div>
@@ -184,7 +184,7 @@ export default function SettingsPage() {
 
           {!showVerifInput && (
             <button onClick={handleRequestEmailChange} disabled={savingEmail || !newEmail || newEmail === authUser?.email}
-              className="px-5 py-2 bg-white hover:bg-neutral-200 text-neutral-900 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50">
+              className="px-5 py-2 bg-maroon hover:bg-maroon-dark text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50">
               {savingEmail ? 'Mengirim...' : 'Kirim Kode Verifikasi'}
             </button>
           )}
@@ -192,23 +192,23 @@ export default function SettingsPage() {
       </div>
 
       {/* Password Section */}
-      <div className="rounded-xl border border-neutral-800 bg-[#0c0c0e] overflow-hidden">
-        <div className="p-4 border-b border-neutral-800 bg-neutral-900/20">
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="p-4 border-b border-border bg-maroon-darker/30">
           <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Ganti Password</h3>
         </div>
         <form onSubmit={handleChangePassword} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-neutral-400 mb-1.5">Password Saat Ini</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Password Saat Ini</label>
             <input type="password" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)}
               className={inputClass} placeholder="********" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-400 mb-1.5">Password Baru</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Password Baru</label>
             <input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)}
               className={inputClass} placeholder="Minimal 6 karakter" minLength={6} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-400 mb-1.5">Konfirmasi Password Baru</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Konfirmasi Password Baru</label>
             <input type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)}
               className={inputClass} placeholder="Ketik ulang password baru" />
           </div>
@@ -216,7 +216,7 @@ export default function SettingsPage() {
             <div className={`text-xs ${pwMsg.includes('berhasil') ? 'text-emerald-400' : 'text-red-400'}`}>{pwMsg}</div>
           )}
           <button type="submit" disabled={savingPw}
-            className="px-5 py-2 bg-white hover:bg-neutral-200 text-neutral-900 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50">
+            className="px-5 py-2 bg-maroon hover:bg-maroon-dark text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50">
             {savingPw ? 'Menyimpan...' : 'Ubah Password'}
           </button>
         </form>
