@@ -9,6 +9,7 @@ node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.staging.local
 
 # Build outputs
 dist/
@@ -36,3 +37,14 @@ coverage/
 
 # Prisma
 packages/database/prisma/migrations/
+
+# Temp files
+*.tmp
+*.temp
+
+# Docker
+docker-compose.override.yml
+
+# Deployment artifacts
+*.tar.gz
+*.tgz

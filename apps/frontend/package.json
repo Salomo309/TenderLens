@@ -8,10 +8,16 @@
     "start": "next start"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.4.0",
+    "@tanstack/react-query": "^5.101.2",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tailwindcss": "^4.0.0-beta.8"
+    "react-hook-form": "^7.80.0",
+    "react-hot-toast": "^2.6.0",
+    "socket.io-client": "^4.8.3",
+    "tailwindcss": "^4.0.0-beta.8",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0-beta.8",
