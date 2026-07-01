@@ -3,22 +3,22 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationService } from '../../notifications/notification.service';
 import { TenderStage, TenderCategory, ScraperStatus, NotificationChannel } from '@prisma/client';
-import * as cheerio from 'cheerio';
 import axios from 'axios';
 
 interface LpseSource {
   name: string;
   baseUrl: string;
   slug: string;
+  apiSlug: string;
   location: string;
 }
 
 const DEFAULT_LPSE_SOURCES: LpseSource[] = [
-  { name: 'LPSE Kemenkeu', baseUrl: 'https://lpse.kemenkeu.go.id', slug: 'LPSE_KEMEN_KEU', location: 'DKI Jakarta' },
-  { name: 'LPSE Kemen PUPR', baseUrl: 'https://lpse.pu.go.id', slug: 'LPSE_KEMEN_PUPR', location: 'DKI Jakarta' },
-  { name: 'LPSE DKI Jakarta', baseUrl: 'https://lpse.jakarta.go.id', slug: 'LPSE_DKI_JAKARTA', location: 'DKI Jakarta' },
-  { name: 'LPSE Jawa Barat', baseUrl: 'https://lpse.jabarprov.go.id', slug: 'LPSE_JAWA_BARAT', location: 'Jawa Barat' },
-  { name: 'LPSE Surabaya', baseUrl: 'https://lpse.surabaya.go.id', slug: 'LPSE_SURABAYA', location: 'Jawa Timur' },
+  { name: 'LPSE Kemenkeu', baseUrl: 'https://spse.inaproc.id/kemenkeu', slug: 'LPSE_KEMEN_KEU', apiSlug: 'kemenkeu', location: 'DKI Jakarta' },
+  { name: 'LPSE Kemen PUPR', baseUrl: 'https://spse.inaproc.id/pu', slug: 'LPSE_KEMEN_PUPR', apiSlug: 'pu', location: 'DKI Jakarta' },
+  { name: 'LPSE DKI Jakarta', baseUrl: 'https://spse.inaproc.id/jakarta', slug: 'LPSE_DKI_JAKARTA', apiSlug: 'jakarta', location: 'DKI Jakarta' },
+  { name: 'LPSE Jawa Barat', baseUrl: 'https://spse.inaproc.id/jabarprov', slug: 'LPSE_JAWA_BARAT', apiSlug: 'jabarprov', location: 'Jawa Barat' },
+  { name: 'LPSE Surabaya', baseUrl: 'https://spse.inaproc.id/surabaya', slug: 'LPSE_SURABAYA', apiSlug: 'surabaya', location: 'Jawa Timur' },
 ];
 
 function getLpseSources(): LpseSource[] {
@@ -327,142 +327,118 @@ export class ScraperService {
   }
 
   private async fetchTenders(source: LpseSource): Promise<TenderParseResult[]> {
-    const urls = [
-      `${source.baseUrl}/eproc4/lelang`,
-      `${source.baseUrl}/eproc4/lelang/index`,
-      `${source.baseUrl}/eproc4`,
-      `${source.baseUrl}`,
-    ];
-
-    for (const url of urls) {
-      const html = await this.fetchPageWithRetry(url);
-      if (!html) {
-        this.logger.warn(`[${source.slug}] No response from ${url}`);
-        continue;
+    try {
+      const { token, cookies } = await this.fetchSession(source);
+      if (!token) {
+        this.logger.warn(`[${source.slug}] Could not get authenticity token`);
+        return [];
       }
-      if (html.length < 500) {
-        this.logger.warn(`[${source.slug}] Response too short (${html.length} chars) from ${url}`);
-        continue;
-      }
-
-      this.logger.log(`[${source.slug}] Got ${html.length} chars from ${url}, parsing...`);
-      const result = this.parseTenderTable(html, source);
-      if (result.length > 0) {
-        this.logger.log(`[${source.slug}] Parsed ${result.length} tenders from ${url}`);
-        return result;
-      }
-      this.logger.warn(`[${source.slug}] Parsed 0 tenders from ${url}, trying next URL...`);
+      const results = await this.fetchTendersPage(source, token, cookies, 0);
+      return results;
+    } catch (err: any) {
+      this.logger.error(`[${source.slug}] fetchTenders error: ${err.message}`);
+      return [];
     }
-
-    return [];
   }
 
-  private async fetchPageWithRetry(url: string, retries = 2): Promise<string | null> {
-    for (let attempt = 0; attempt <= retries; attempt++) {
-      try {
-        const response = await axios.get(url, {
-          timeout: 15000,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
-          },
-          maxRedirects: 5,
-          validateStatus: (status) => status >= 200 && status < 300,
-        });
-        return response.data;
-      } catch (err: any) {
-        const status = err?.response?.status;
-        const msg = err?.response?.statusText || err?.code || err?.message || 'Unknown error';
-        this.logger.warn(`fetchPage attempt ${attempt + 1}/${retries + 1} failed for ${url}: ${status ? `HTTP ${status} ${msg}` : msg}`);
-        if (attempt < retries) {
-          const delay = Math.pow(2, attempt) * 1000;
-          this.logger.log(`Retrying in ${delay}ms...`);
-          await new Promise((resolve) => setTimeout(resolve, delay));
-          continue;
-        }
-        return null;
-      }
-    }
-    return null;
+  private async fetchSession(source: LpseSource): Promise<{ token: string; cookies: string }> {
+    const pageUrl = `${source.baseUrl}/lelang`;
+    const res = await axios.get(pageUrl, {
+      timeout: 15000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+      },
+      maxRedirects: 5,
+    });
+    const match = res.data.match(/authenticityToken\s*=\s*['"](\S+?)['"]/);
+    const token = match ? match[1] : '';
+    const cookies = (res.headers['set-cookie'] || []).map((c: string) => c.split(';')[0]).join('; ');
+    return { token, cookies };
   }
 
-  private parseTenderTable(html: string, source: LpseSource): TenderParseResult[] {
-    const $ = cheerio.load(html);
-    const results: TenderParseResult[] = [];
+  private async fetchTendersPage(
+    source: LpseSource,
+    token: string,
+    cookies: string,
+    start: number,
+    length = 100,
+  ): Promise<TenderParseResult[]> {
+    const apiUrl = `${source.baseUrl}/dt/lelang?tahun=2027`;
+    const body = new URLSearchParams({
+      authenticityToken: token,
+      draw: '1',
+      start: String(start),
+      length: String(length),
+    }).toString();
 
-    const rows = $('table tr, tbody tr, .table-hover tr, [class*="table"] tr, .list-lelang tr, tr[data-id], tr[class*="lelang"]');
-
-    if (rows.length === 0) {
-      return this.parseFromPreOrPlainText(html, source);
-    }
-
-    rows.each((_, row) => {
-      const cells = $(row).find('td');
-      if (cells.length < 3) return;
-
-      const linkEl = $(row).find('a[href*="pengumumanlelang"], a[href*="lelang"], td:nth-child(2) a, td:nth-child(3) a').first();
-      const href = linkEl.attr('href') || '';
-      const lpseId = this.extractLpseId(href, source);
-
-      const title = linkEl.text().trim() || $(cells[1]).text().trim() || $(cells[2]).text().trim() || '';
-      const agency = ($(cells[2]).text().trim() || $(cells[1]).text().trim() || '').replace(/\s+/g, ' ').trim();
-      const paguText = ($(cells[4]).text().trim() || $(cells[3]).text().trim() || '0').replace(/[^0-9.,]/g, '');
-      const hpsText = ($(cells[5]).text().trim() || $(cells[4]).text().trim() || '0').replace(/[^0-9.,]/g, '');
-      const stageText = ($(cells[6]).text().trim() || $(cells[5]).text().trim() || '').toLowerCase();
-
-      if (!title || title.length < 5) return;
-
-      results.push({
-        lpseId: lpseId || this.generateLpseId(title, source),
-        title: title.replace(/\s+/g, ' ').trim(),
-        agency: agency || source.name,
-        pagu: this.parseDecimal(paguText),
-        hps: this.parseDecimal(hpsText),
-        category: this.inferCategory(title),
-        stage: this.mapStage(stageText),
-        location: source.location,
-        publishedAt: new Date(),
-        deadlineAt: null,
-      });
+    const res = await axios.post(apiUrl, body, {
+      timeout: 15000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Requested-With': 'XMLHttpRequest',
+        'Cookie': cookies,
+        'Referer': `${source.baseUrl}/lelang`,
+      },
     });
 
-    if (results.length > 0) return results;
-    return this.parseFromPreOrPlainText(html, source);
-  }
+    const data = res.data;
+    const rawRows: any[][] = data.data || [];
+    const tenders = rawRows.map((row) => this.parseApiRow(row, source));
 
-  private parseFromPreOrPlainText(html: string, source: LpseSource): TenderParseResult[] {
-    const $ = cheerio.load(html);
-    const results: TenderParseResult[] = [];
-    const text = $('pre, code, .well, .panel-body, .content, #content, main').text() || $('body').text();
-    const lines = text.split('\n').map((l) => l.trim()).filter((l) => l.length > 20);
-
-    for (const line of lines.slice(0, 30)) {
-      if (line.includes('(') && line.length < 200) {
-        results.push({
-          lpseId: this.generateLpseId(line, source),
-          title: line.substring(0, 120).replace(/\s+/g, ' ').trim(),
-          agency: source.name,
-          pagu: 0, hps: 0,
-          category: TenderCategory.OTHER,
-          stage: TenderStage.PENGUMUMAN,
-          location: source.location,
-          publishedAt: new Date(),
-          deadlineAt: null,
-        });
-      }
+    const total = data.recordsFiltered || 0;
+    if (total > start + length) {
+      const remaining = await this.fetchTendersPage(source, token, cookies, start + length, length);
+      tenders.push(...remaining);
     }
-    return results;
+
+    return tenders;
   }
 
-  private extractLpseId(href: string, source: LpseSource): string {
-    const match = href.match(/(\d+)/);
-    return match ? `${source.slug}_${match[1]}` : '';
+  private parseApiRow(row: any[], source: LpseSource): TenderParseResult {
+    const lpseId = `${source.slug}_${row[0] || ''}`;
+    const rawTitle = (row[1] || '').replace(/<[^>]+>/g, '').trim();
+    const agency = (row[2] || source.name).replace(/\s+/g, ' ').trim();
+    const paguText = (row[4] || '0').replace(/\s+/g, ' ').trim();
+    const statusText = (row[3] || '').toLowerCase();
+
+    return {
+      lpseId,
+      title: rawTitle.replace(/\s+/g, ' ').trim(),
+      agency,
+      pagu: this.parseFormattedPagu(paguText),
+      hps: this.parseFormattedPagu(paguText),
+      category: this.inferCategory(rawTitle),
+      stage: this.mapStage(statusText),
+      location: source.location,
+      publishedAt: new Date(),
+      deadlineAt: null,
+    };
   }
 
-  private generateLpseId(title: string, source: LpseSource): string {
-    const hash = title.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20).toLowerCase();
-    return `${source.slug}_${hash}_${Date.now().toString(36)}`;
+  private parseFormattedPagu(text: string): number {
+    if (!text || text === '0') return 0;
+
+    // Format examples: "12,9 M", "485,4 M", "1,2 T", "500 Juta"
+    const lower = text.toLowerCase();
+    let multiplier = 1;
+
+    if (lower.includes('t')) {
+      multiplier = 1_000_000_000_000; // Triliun
+    } else if (lower.includes('m')) {
+      multiplier = 1_000_000_000; // Miliar
+    } else if (lower.includes('juta') || lower.includes('jt')) {
+      multiplier = 1_000_000;
+    } else if (lower.includes('ribu')) {
+      multiplier = 1_000;
+    }
+
+    const numStr = text.replace(/[^0-9,]/g, '').replace(',', '.');
+    const num = parseFloat(numStr);
+    return isNaN(num) ? 0 : Math.round(num * multiplier);
   }
 
   private parseDecimal(value: string): number {
