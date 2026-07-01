@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationService } from '../notifications/notification.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 import { NotificationChannel } from '@prisma/client';
 
 @Injectable()
@@ -11,7 +12,8 @@ export class AlertsService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
+    private readonly notificationsGateway: NotificationsGateway,
   ) {}
 
   /**
@@ -90,16 +92,28 @@ export class AlertsService {
                 tenderUrl: `${process.env.FRONTEND_URL}/dashboard/tenders/${tender.id}`,
               };
 
-              if (channel === NotificationChannel.TELEGRAM && alert.telegramChatId) {
-                await this.notificationService.sendTelegramAlert({
-                  ...dispatchPayload,
-                  telegramChatId: alert.telegramChatId,
-                });
+              const resolveEmail = () => alert.emailAddress || alert.tenant.members[0]?.user.email;
+
+              if (channel === NotificationChannel.TELEGRAM) {
+                if (alert.telegramChatId) {
+                  await this.notificationService.sendTelegramAlert({
+                    ...dispatchPayload,
+                    telegramChatId: alert.telegramChatId,
+                  });
+                } else {
+                  const fallbackEmail = resolveEmail();
+                  if (fallbackEmail) {
+                    this.logger.log(`Telegram not connected — falling back to EMAIL for ${fallbackEmail}`);
+                    await this.notificationService.sendEmailAlert({
+                      ...dispatchPayload,
+                      emailRecipient: fallbackEmail,
+                    });
+                  }
+                }
               }
 
               if (channel === NotificationChannel.EMAIL) {
-                // Resolve recipient email (custom alert-specific override or default company admin member)
-                const recipientEmail = alert.emailAddress || alert.tenant.members[0]?.user.email;
+                const recipientEmail = resolveEmail();
                 if (recipientEmail) {
                   await this.notificationService.sendEmailAlert({
                     ...dispatchPayload,
@@ -119,6 +133,11 @@ export class AlertsService {
                     message: `Tender Baru Terdeteksi: ${tender.title}. Pagu Rp ${tender.pagu}.`,
                     deliveryStatus: 'SENT',
                   },
+                });
+                this.notificationsGateway.sendAlert(alert.tenantId, {
+                  title: 'Tender Baru Terdeteksi',
+                  message: `${tender.title} - Pagu Rp ${tender.pagu}`,
+                  tenderId: tender.id,
                 });
               }
             }

@@ -280,10 +280,17 @@ export class ScraperService {
             );
           }
 
-          if (alert.channels.includes(NotificationChannel.TELEGRAM) && alert.telegramChatId) {
-            await this.notificationService.sendTelegramAlert(payload).catch((err) =>
-              this.logger.warn(`Telegram notification failed: ${err.message}`)
-            );
+          if (alert.channels.includes(NotificationChannel.TELEGRAM)) {
+            if (alert.telegramChatId) {
+              await this.notificationService.sendTelegramAlert(payload).catch((err) =>
+                this.logger.warn(`Telegram notification failed: ${err.message}`)
+              );
+            } else if (alert.emailAddress) {
+              this.logger.log(`Telegram not connected — falling back to EMAIL for ${alert.emailAddress}`);
+              await this.notificationService.sendEmailAlert({ ...payload, emailRecipient: alert.emailAddress }).catch((err) =>
+                this.logger.warn(`Fallback email notification failed: ${err.message}`)
+              );
+            }
           }
 
           if (alert.channels.includes(NotificationChannel.WEB_DASHBOARD)) {

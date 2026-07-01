@@ -42,7 +42,7 @@ export class AuthService {
         data: {
           tenantId: tenant.id,
           userId: user.id,
-          role: 'SUPERADMIN',
+          role: 'USER',
         },
       });
 
@@ -221,17 +221,57 @@ export class AuthService {
       throw new BadRequestException('Kode verifikasi salah.');
     }
 
+    const oldEmail = user.email;
+    const newEmail = user.pendingEmail;
+
     await this.prisma.user.update({
       where: { id: userId },
       data: {
-        email: user.pendingEmail,
+        email: newEmail,
         pendingEmail: null,
         emailVerificationCode: null,
         emailVerificationExpiresAt: null,
       },
     });
 
-    return { message: 'Email berhasil diperbarui.', email: user.pendingEmail };
+    // Propagate email change to keyword alerts using the old email
+    if (oldEmail && newEmail && oldEmail !== newEmail) {
+      const member = await this.prisma.tenantMember.findFirst({
+        where: { userId },
+        select: { tenantId: true },
+      });
+      if (member) {
+        await this.prisma.keywordAlert.updateMany({
+          where: { tenantId: member.tenantId, emailAddress: oldEmail },
+          data: { emailAddress: newEmail },
+        });
+      }
+    }
+
+    return { message: 'Email berhasil diperbarui.', email: newEmail };
+  }
+
+  async handleGoogleLogin(profile: any) {
+    const { user, jwt, payload } = profile;
+
+    const member = await this.prisma.tenantMember.findFirst({
+      where: { userId: user.id },
+      include: { tenant: true },
+    });
+
+    return {
+      jwt,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatarUrl: user.avatarUrl,
+        role: payload.role,
+      },
+      tenant: member
+        ? { id: member.tenant.id, name: member.tenant.name, slug: member.tenant.slug }
+        : null,
+    };
   }
 
   async changePassword(userId: string, currentPassword: string, newPassword: string) {

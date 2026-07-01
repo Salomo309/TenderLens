@@ -1,16 +1,31 @@
 import { Controller, Get, Post, Delete, Body, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser, JwtPayload } from '../auth/decorators/current-user.decorator';
 import { NotificationService } from './notification.service';
+import { TelegramBotService } from './telegram-bot.service';
 
+@ApiTags('notifications')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('telegram')
 export class TelegramController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
+    private readonly telegramBotService: TelegramBotService,
   ) {}
+
+  @ApiOperation({ summary: 'Get Telegram bot status' })
+  @Get('bot-status')
+  getBotStatus() {
+    return {
+      botUsername: process.env.TELEGRAM_BOT_USERNAME || 'TenderLensBot',
+      polling: this.telegramBotService.isRunning(),
+      botTokenSet: !!process.env.TELEGRAM_BOT_TOKEN,
+    };
+  }
 
   @Get('bot-info')
   async getBotInfo(@CurrentUser() user: JwtPayload) {

@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Param, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { TendersService, QueryTendersDto } from './tenders.service';
 import { TenderCategory, TenderStage } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -6,24 +7,33 @@ import { CurrentUser, JwtPayload } from '../auth/decorators/current-user.decorat
 import { PrismaService } from '../prisma/prisma.service';
 import { SubscriptionHelper } from '../../common/helpers/subscription.helper';
 
+@ApiTags('tenders')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('tenders')
 export class TendersController {
-  private subscriptionHelper: SubscriptionHelper;
-
   constructor(
     private readonly tendersService: TendersService,
     private readonly prisma: PrismaService,
-  ) {
-    this.subscriptionHelper = new SubscriptionHelper(this.prisma);
-  }
+    private readonly subscriptionHelper: SubscriptionHelper,
+  ) {}
 
+  @ApiOperation({ summary: 'Get all tender categories' })
   @Get('categories')
   async getCategories() {
     const values = Object.values(TenderCategory);
     return values.map((v) => ({ value: v, label: v.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) }));
   }
 
+  @ApiOperation({ summary: 'Search and filter LPSE tenders with pagination' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'category', required: false, enum: TenderCategory })
+  @ApiQuery({ name: 'stage', required: false, enum: TenderStage })
+  @ApiQuery({ name: 'minPagu', required: false })
+  @ApiQuery({ name: 'maxPagu', required: false })
+  @ApiQuery({ name: 'location', required: false })
   @Get()
   async getTenders(
     @Query('page') page?: number,
@@ -47,16 +57,19 @@ export class TendersController {
     });
   }
 
+  @ApiOperation({ summary: 'Get saved/bookmarked tenders for the current tenant' })
   @Get('saved')
   async getSavedTenders(@CurrentUser() user: JwtPayload) {
     return this.tendersService.findSaved(user.tenantId);
   }
 
+  @ApiOperation({ summary: 'Get tender by ID' })
   @Get(':id')
   async getTenderById(@Param('id') id: string) {
     return this.tendersService.findOne(id);
   }
 
+  @ApiOperation({ summary: 'Trigger AI summary generation for a tender' })
   @Post(':id/summary')
   @HttpCode(HttpStatus.OK)
   async triggerAiSummary(
@@ -69,6 +82,7 @@ export class TendersController {
     return result;
   }
 
+  @ApiOperation({ summary: 'Toggle saved status of a tender' })
   @Post(':id/save')
   @HttpCode(HttpStatus.OK)
   async toggleSaveTender(

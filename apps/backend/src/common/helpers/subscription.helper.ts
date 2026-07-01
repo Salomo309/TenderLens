@@ -1,7 +1,8 @@
-import { ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../modules/prisma/prisma.service';
 import { getPlanConfig, PlanConfig } from '../constants/plans';
 
+@Injectable()
 export class SubscriptionHelper {
   constructor(private readonly prisma: PrismaService) {}
 
@@ -32,22 +33,23 @@ export class SubscriptionHelper {
   }
 
   async checkAiSummaryLimit(tenantId: string): Promise<void> {
-    const { plan, tier } = await this.getPlan(tenantId);
+    const { plan } = await this.getPlan(tenantId);
     if (plan.maxAiSummariesPerMonth >= 9999) return; // unlimited tier
 
-    const sub = await this.prisma.subscription.findUnique({ where: { tenantId } });
-    if (!sub) return;
+    const now = new Date();
+    let sub = await this.prisma.subscription.findUnique({ where: { tenantId } });
+    let used = sub?.monthlyAiSummaryUsed || 0;
 
     // Reset counter if a month has passed
-    const now = new Date();
-    if (sub.monthlyAiSummaryResetAt && sub.monthlyAiSummaryResetAt < now) {
+    if (sub?.monthlyAiSummaryResetAt && sub.monthlyAiSummaryResetAt < now) {
       await this.prisma.subscription.update({
         where: { tenantId },
         data: { monthlyAiSummaryUsed: 0, monthlyAiSummaryResetAt: null },
       });
+      used = 0;
     }
 
-    if (sub.monthlyAiSummaryUsed >= plan.maxAiSummariesPerMonth) {
+    if (used >= plan.maxAiSummariesPerMonth) {
       throw new ForbiddenException(
         `Batas AI Summary bulanan (${plan.maxAiSummariesPerMonth}) tercapai. Upgrade paket untuk kuota lebih besar.`
       );
@@ -55,16 +57,21 @@ export class SubscriptionHelper {
   }
 
   async incrementAiSummaryUsed(tenantId: string): Promise<void> {
-    const sub = await this.prisma.subscription.findUnique({ where: { tenantId } });
-    if (!sub) return;
-
     const now = new Date();
-    // Set reset time to next month if not set
-    const resetAt = sub.monthlyAiSummaryResetAt || new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const resetAt = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-    await this.prisma.subscription.update({
+    // Upsert: create subscription record for FREE_TRIAL if it doesn't exist
+    await this.prisma.subscription.upsert({
       where: { tenantId },
-      data: {
+      create: {
+        tenantId,
+        tier: 'FREE_TRIAL',
+        status: 'ACTIVE',
+        expiresAt: resetAt,
+        monthlyAiSummaryUsed: 1,
+        monthlyAiSummaryResetAt: resetAt,
+      },
+      update: {
         monthlyAiSummaryUsed: { increment: 1 },
         monthlyAiSummaryResetAt: resetAt,
       },

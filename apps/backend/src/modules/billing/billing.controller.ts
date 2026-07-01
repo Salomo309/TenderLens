@@ -1,10 +1,12 @@
 import { Controller, Get, Post, Body, Param, HttpCode, HttpStatus, UseGuards, BadRequestException } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { BillingService, MidtransNotificationDto } from './billing.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser, JwtPayload } from '../auth/decorators/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 import { PLANS, getPlanConfig } from '../../common/constants/plans';
 
+@ApiTags('billing')
 @Controller('billing')
 export class BillingController {
   constructor(
@@ -12,6 +14,8 @@ export class BillingController {
     private readonly prisma: PrismaService,
   ) {}
 
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current subscription, invoices, and plan details' })
   @UseGuards(JwtAuthGuard)
   @Get('subscription')
   async getSubscription(@CurrentUser() user: JwtPayload) {
@@ -29,11 +33,14 @@ export class BillingController {
     return { subscription, invoices, plan, allPlans: PLANS };
   }
 
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Request subscription upgrade with Midtrans payment' })
   @UseGuards(JwtAuthGuard)
   @Post('upgrade')
   async requestUpgrade(
     @CurrentUser() user: JwtPayload,
     @Body('tier') tier?: string,
+    @Body('paymentMethod') paymentMethod?: string,
   ) {
     const targetTier = tier || 'PRO';
     if (!PLANS[targetTier] || targetTier === 'FREE_TRIAL') {
@@ -69,7 +76,8 @@ export class BillingController {
       targetTier,
       plan.price,
       dbUser?.email || user.email,
-      dbUser?.name || tenant?.name || 'Customer'
+      dbUser?.name || tenant?.name || 'Customer',
+      paymentMethod,
     );
 
     return {
@@ -80,6 +88,7 @@ export class BillingController {
     };
   }
 
+  @ApiOperation({ summary: 'Handle Midtrans payment notification webhook' })
   @Post('webhook')
   @HttpCode(HttpStatus.OK)
   async handleMidtransWebhook(@Body() notification: MidtransNotificationDto) {

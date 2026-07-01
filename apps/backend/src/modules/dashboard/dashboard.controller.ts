@@ -1,13 +1,17 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser, JwtPayload } from '../auth/decorators/current-user.decorator';
 
+@ApiTags('dashboard')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('dashboard')
 export class DashboardController {
   constructor(private prisma: PrismaService) {}
 
+  @ApiOperation({ summary: 'Get dashboard statistics for the current tenant' })
   @Get('stats')
   async getStats(@CurrentUser() user: JwtPayload) {
     const [
@@ -55,7 +59,7 @@ export class DashboardController {
         const total = logs.length;
         const success = logs.filter((l) => l.status === 'SUCCESS').length;
         const uptime = total > 0 ? (success / total) * 100 : null;
-        return { uptime: parseFloat(uptime.toFixed(1)), totalRuns: total };
+        return { uptime: uptime !== null ? parseFloat(uptime.toFixed(1)) : null, totalRuns: total };
       }),
     );
 

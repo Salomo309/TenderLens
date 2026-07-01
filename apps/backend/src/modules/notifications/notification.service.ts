@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsGateway } from './notifications.gateway';
 import { NotificationChannel } from '@prisma/client';
 
 export interface AlertDispatchPayload {
@@ -19,7 +20,10 @@ export class NotificationService {
   private readonly resendApiKey = process.env.RESEND_API_KEY;
   private readonly mailFrom = process.env.MAIL_FROM || 'no-reply@tenderlens.id';
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsGateway: NotificationsGateway,
+  ) {}
 
   /**
    * Dispatch dynamic email alerts
@@ -45,16 +49,20 @@ export class NotificationService {
     try {
       if (!this.resendApiKey) {
         this.logger.warn(`Mock Email sent to: ${emailRecipient}. Setup RESEND_API_KEY for production emails.`);
-        await this.logNotification({
-          tenantId,
-          alertId,
-          channel: NotificationChannel.EMAIL,
-          recipient: emailRecipient,
-          message: messageContent,
-          status: 'SENT_MOCK',
-        });
-        return true;
-      }
+      await this.logNotification({
+        tenantId,
+        alertId,
+        channel: NotificationChannel.EMAIL,
+        recipient: emailRecipient,
+        message: messageContent,
+        status: 'SENT_MOCK',
+      });
+      this.notificationsGateway.sendAlert(tenantId, {
+        title: 'Tender Baru Terdeteksi',
+        message: `Email alert untuk tender: ${tenderTitle}`,
+      });
+      return true;
+    }
 
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -118,16 +126,20 @@ _Dikirim otomatis oleh TenderLens Platform_
     try {
       if (!this.telegramToken) {
         this.logger.warn(`Mock Telegram message sent to chat: ${telegramChatId}. Configure TELEGRAM_BOT_TOKEN for real alerts.`);
-        await this.logNotification({
-          tenantId,
-          alertId,
-          channel: NotificationChannel.TELEGRAM,
-          recipient: telegramChatId,
-          message: formattedMessage,
-          status: 'SENT_MOCK',
-        });
-        return true;
-      }
+      await this.logNotification({
+        tenantId,
+        alertId,
+        channel: NotificationChannel.TELEGRAM,
+        recipient: telegramChatId,
+        message: formattedMessage,
+        status: 'SENT_MOCK',
+      });
+      this.notificationsGateway.sendAlert(tenantId, {
+        title: 'Tender Baru Terdeteksi',
+        message: `Telegram alert untuk tender: ${tenderTitle}`,
+      });
+      return true;
+    }
 
       const telegramUrl = `https://api.telegram.org/bot${this.telegramToken}/sendMessage`;
       const response = await fetch(telegramUrl, {

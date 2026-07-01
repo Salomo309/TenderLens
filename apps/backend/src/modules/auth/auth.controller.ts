@@ -1,11 +1,14 @@
-import { Body, Controller, Get, Post, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Patch, UseGuards, Req, Res } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser, JwtPayload } from './decorators/current-user.decorator';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { PrismaService } from '../prisma/prisma.service';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -13,16 +16,35 @@ export class AuthController {
     private prisma: PrismaService,
   ) {}
 
+  @ApiOperation({ summary: 'Register a new tenant company account' })
   @Post('register')
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
+  @ApiOperation({ summary: 'Login with email and password' })
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
 
+  @ApiOperation({ summary: 'Initiate Google OAuth login' })
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth() {}
+
+  @ApiExcludeEndpoint()
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthRedirect(@Req() req, @Res() res) {
+    const { jwt, user, tenant } = await this.authService.handleGoogleLogin(req.user);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    const tenantId = tenant?.id || '';
+    res.redirect(`${frontendUrl}/auth/callback?token=${jwt}&userId=${user.id}&tenantId=${tenantId}`);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user profile' })
   @Get('me')
   @UseGuards(JwtAuthGuard)
   me(@CurrentUser() user: JwtPayload) {

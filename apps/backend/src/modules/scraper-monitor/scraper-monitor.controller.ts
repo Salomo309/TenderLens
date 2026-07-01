@@ -1,9 +1,12 @@
 import { Controller, Get, Post, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from '../prisma/prisma.service';
 import { ScraperStatus } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ScraperService } from './services/scraper.service';
 
+@ApiTags('scraper')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('scraper-monitor')
 export class ScraperMonitorController {
@@ -12,21 +15,21 @@ export class ScraperMonitorController {
     private readonly scraperService: ScraperService,
   ) {}
 
+  @ApiOperation({ summary: 'Trigger an immediate scrape of all LPSE sources' })
   @Post('scrape')
   async triggerScrape() {
     const total = await this.scraperService.scrapeAll();
     return { message: `Scrape cycle completed. ${total} tenders processed.`, total };
   }
 
+  @ApiOperation({ summary: 'Seed sample tender data for development/testing' })
   @Post('seed')
   async triggerSeed() {
     const total = await this.scraperService.seedData();
     return { message: `Seeded ${total} sample tenders successfully.`, total };
   }
 
-  /**
-   * Fetch paginated list of crawler executions
-   */
+  @ApiOperation({ summary: 'Get scraper execution logs' })
   @Get('logs')
   async getLogs(
     @Query('status') status?: ScraperStatus,
@@ -50,9 +53,7 @@ export class ScraperMonitorController {
     });
   }
 
-  /**
-   * Aggregate reports outlining uptime percentages and scrape counts per crawler agent
-   */
+  @ApiOperation({ summary: 'Get scraper health and uptime for all crawlers' })
   @Get('health')
   async getUptimeHealth() {
     const activeCrawlers = [
@@ -80,7 +81,7 @@ export class ScraperMonitorController {
 
         return {
           crawlerName: crawler,
-          uptime: parseFloat(uptime.toFixed(2)),
+          uptime: uptime !== null ? parseFloat(uptime.toFixed(2)) : null,
           totalRuns,
           successRuns,
           failedRuns,

@@ -27,9 +27,11 @@ export class BillingService {
    * Validate webhook request payload using Midtrans HMAC SHA512 signature key specs
    */
   validateSignature(dto: MidtransNotificationDto): boolean {
-    if (!this.serverKey) {
-      this.logger.warn('MIDTRANS_SERVER_KEY is undefined. Skipping webhook validation check (Sandbox).');
-      return true; // Bypassed during local debugging
+    const isProduction = process.env.MIDTRANS_IS_PRODUCTION === 'true';
+
+    if (!this.serverKey || !isProduction) {
+      this.logger.warn('Sandbox mode — skipping webhook signature validation.');
+      return true;
     }
 
     const payload = dto.order_id + dto.status_code + dto.gross_amount + this.serverKey;
@@ -43,8 +45,16 @@ export class BillingService {
 
   /**
    * Generates a new invoice and requests a Midtrans Snap transaction token
+   * Supports multiple payment methods: BNI, Mandiri, CIMB, GoPay, QRIS
    */
-  async createSubscriptionInvoice(tenantId: string, tier: string, amount: number, email: string, name: string): Promise<any> {
+  async createSubscriptionInvoice(
+    tenantId: string,
+    tier: string,
+    amount: number,
+    email: string,
+    name: string,
+    paymentMethod?: string,
+  ): Promise<any> {
     const orderId = `INV-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`.toUpperCase();
 
     let snapToken = null;
@@ -57,6 +67,62 @@ export class BillingService {
           ? 'https://app.midtrans.com/snap/v1/transactions'
           : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
 
+        const body: any = {
+          transaction_details: {
+            order_id: orderId,
+            gross_amount: amount,
+          },
+          customer_details: {
+            first_name: name,
+            email: email,
+          },
+          item_details: [
+            {
+              id: `${tier.toLowerCase()}_monthly`,
+              price: amount,
+              quantity: 1,
+              name: `TenderLens ${tier} Subscription - 30 Days`,
+            },
+          ],
+        };
+
+        // Configure enabled payment methods
+        if (paymentMethod) {
+          switch (paymentMethod) {
+            case 'bni':
+              body.enabled_payments = ['bni_va'];
+              break;
+            case 'mandiri':
+              body.enabled_payments = ['mandiri_va', 'echannel'];
+              break;
+            case 'cimb':
+              body.enabled_payments = ['cimb_va'];
+              break;
+            case 'gopay':
+              body.enabled_payments = ['gopay'];
+              break;
+            case 'qris':
+              body.enabled_payments = ['qris'];
+              break;
+            default:
+              body.enabled_payments = [
+                'bni_va', 'mandiri_va', 'cimb_va',
+                'gopay', 'qris',
+              ];
+              break;
+          }
+        } else {
+          body.enabled_payments = [
+            'bni_va', 'mandiri_va', 'cimb_va',
+            'gopay', 'qris',
+          ];
+        }
+
+        body.credit_card = {
+          secure: true,
+          save_card: false,
+        };
+
         const response = await fetch(snapBaseUrl, {
           method: 'POST',
           headers: {
@@ -64,24 +130,7 @@ export class BillingService {
             Accept: 'application/json',
             Authorization: `Basic ${authHeader}`,
           },
-          body: JSON.stringify({
-            transaction_details: {
-              order_id: orderId,
-              gross_amount: amount,
-            },
-            customer_details: {
-              first_name: name,
-              email: email,
-            },
-            item_details: [
-              {
-                id: `${tier.toLowerCase()}_monthly`,
-                price: amount,
-                quantity: 1,
-                name: `TenderLens ${tier} Subscription - 30 Days`,
-              },
-            ],
-          }),
+          body: JSON.stringify(body),
         });
 
         if (response.ok) {
