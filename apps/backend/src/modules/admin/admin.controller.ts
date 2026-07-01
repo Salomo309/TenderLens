@@ -5,6 +5,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser, JwtPayload } from '../auth/decorators/current-user.decorator';
 import { ForbiddenException, NotFoundException, ConflictException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
+import axios from 'axios';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -175,5 +176,97 @@ export class AdminController {
     if (!existing) throw new NotFoundException('User tidak ditemukan.');
     await this.prisma.user.delete({ where: { id } });
     return { message: 'User berhasil dihapus.' };
+  }
+
+  // ==========================================
+  // LPSE Source Management
+  // ==========================================
+
+  @ApiOperation({ summary: 'List all LPSE sources (SUPERADMIN only)' })
+  @Get('lpse-sources')
+  async getLpseSources(@CurrentUser() user: JwtPayload) {
+    this.checkAdmin(user);
+    return this.prisma.lpseSource.findMany({ orderBy: { name: 'asc' } });
+  }
+
+  @ApiOperation({ summary: 'Discover LPSE sources from eproc directory (SUPERADMIN only)' })
+  @Post('lpse-sources/discover')
+  async discoverLpseSources(@CurrentUser() user: JwtPayload) {
+    this.checkAdmin(user);
+
+    const res = await axios.get('https://eproc.lkpp.go.id/lpse/index', {
+      timeout: 20000,
+      headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html' },
+    });
+
+    const html = res.data;
+
+    // Extract all unique SPSE INAPROC slugs from the page
+    const slugSet = new Set<string>();
+    const spseRegex = /spse\.inaproc\.id\/([a-z0-9_-]+)/gi;
+    let spseMatch: RegExpExecArray | null;
+    while ((spseMatch = spseRegex.exec(html)) !== null) {
+      slugSet.add(spseMatch[1].toLowerCase());
+    }
+
+    const found: Array<{ name: string; apiSlug: string; baseUrl: string; location: string | null }> = [];
+
+    for (const apiSlug of slugSet) {
+      const baseUrl = `https://spse.inaproc.id/${apiSlug}`;
+      // Find the LPSE name from nearest <h4> before the slug mention
+      const slugIdx = html.indexOf(apiSlug, Math.max(0, html.indexOf('spse.inaproc.id/' + apiSlug)));
+      const before = html.substring(Math.max(0, (slugIdx > 0 ? slugIdx : 0) - 600), slugIdx > 0 ? slugIdx : 0);
+      const nameMatch = before.match(/<h4[^>]*>\s*(.+?)\s*<\/h4>/i);
+      const name = nameMatch ? nameMatch[1].replace(/<[^>]+>/g, '').trim() : apiSlug;
+      // Try to find location from context
+      const context = html.substring(Math.max(0, (slugIdx > 0 ? slugIdx : 0) - 800), (slugIdx > 0 ? slugIdx : 0) + 200);
+      const locationMatch = context.match(/(?:PROVINSI|KOTA|KABUPATEN)\s*<\/span>\s*(.+?)\s*</i);
+      const location = locationMatch ? locationMatch[1].trim() : null;
+
+      found.push({ name, apiSlug, baseUrl, location });
+    }
+
+    let created = 0;
+    for (const src of found) {
+      const slug = src.apiSlug.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+      await this.prisma.lpseSource.upsert({
+        where: { slug },
+        update: { name: src.name, baseUrl: src.baseUrl, apiSlug: src.apiSlug, location: src.location },
+        create: {
+          name: src.name,
+          slug,
+          apiSlug: src.apiSlug,
+          baseUrl: src.baseUrl,
+          location: src.location,
+          isActive: false,
+        },
+      });
+      created++;
+    }
+
+    return { message: `Ditemukan ${found.length} LPSE, ${created} tersimpan.`, total: created };
+  }
+
+  @ApiOperation({ summary: 'Update LPSE source (SUPERADMIN only)' })
+  @Patch('lpse-sources/:id')
+  async updateLpseSource(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body() data: { isActive?: boolean; name?: string; location?: string },
+  ) {
+    this.checkAdmin(user);
+    const existing = await this.prisma.lpseSource.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('LPSE source tidak ditemukan.');
+    return this.prisma.lpseSource.update({ where: { id }, data });
+  }
+
+  @ApiOperation({ summary: 'Delete LPSE source (SUPERADMIN only)' })
+  @Delete('lpse-sources/:id')
+  async deleteLpseSource(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    this.checkAdmin(user);
+    const existing = await this.prisma.lpseSource.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('LPSE source tidak ditemukan.');
+    await this.prisma.lpseSource.delete({ where: { id } });
+    return { message: 'LPSE source berhasil dihapus.' };
   }
 }

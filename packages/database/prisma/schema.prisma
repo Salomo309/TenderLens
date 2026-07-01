@@ -198,7 +198,24 @@ enum NotificationChannel {
 }
 
 // ==========================================
-// 5. Audits & Platform Logs
+// 5. LPSE Source Management (dynamic discovery)
+// ==========================================
+
+model LpseSource {
+  id          String       @id @default(cuid())
+  name        String
+  slug        String       @unique
+  apiSlug     String
+  baseUrl     String
+  location    String?
+  isActive    Boolean      @default(false)
+  lastScraped DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+// ==========================================
+// 6. Audits & Platform Logs
 // ==========================================
 
 model NotificationLog {

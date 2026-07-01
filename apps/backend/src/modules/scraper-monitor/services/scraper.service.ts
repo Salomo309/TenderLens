@@ -13,27 +13,6 @@ interface LpseSource {
   location: string;
 }
 
-const DEFAULT_LPSE_SOURCES: LpseSource[] = [
-  { name: 'LPSE Kemenkeu', baseUrl: 'https://spse.inaproc.id/kemenkeu', slug: 'LPSE_KEMEN_KEU', apiSlug: 'kemenkeu', location: 'DKI Jakarta' },
-  { name: 'LPSE Kemen PUPR', baseUrl: 'https://spse.inaproc.id/pu', slug: 'LPSE_KEMEN_PUPR', apiSlug: 'pu', location: 'DKI Jakarta' },
-  { name: 'LPSE DKI Jakarta', baseUrl: 'https://spse.inaproc.id/jakarta', slug: 'LPSE_DKI_JAKARTA', apiSlug: 'jakarta', location: 'DKI Jakarta' },
-  { name: 'LPSE Jawa Barat', baseUrl: 'https://spse.inaproc.id/jabarprov', slug: 'LPSE_JAWA_BARAT', apiSlug: 'jabarprov', location: 'Jawa Barat' },
-  { name: 'LPSE Surabaya', baseUrl: 'https://spse.inaproc.id/surabaya', slug: 'LPSE_SURABAYA', apiSlug: 'surabaya', location: 'Jawa Timur' },
-];
-
-function getLpseSources(): LpseSource[] {
-  const env = process.env.LPSE_URLS;
-  if (env) {
-    try {
-      const parsed: LpseSource[] = JSON.parse(env);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
-    } catch { /* ignore invalid JSON, fall back to defaults */ }
-  }
-  return DEFAULT_LPSE_SOURCES;
-}
-
 const STAGE_MAP: Record<string, TenderStage> = {
   'pengumuman': TenderStage.PENGUMUMAN,
   'kualifikasi': TenderStage.KUALIFIKASI,
@@ -101,7 +80,7 @@ export class ScraperService {
 
     this.isScraping = true;
     try {
-      const sources = getLpseSources();
+      const sources = await this.getActiveSources();
       const results = await Promise.allSettled(
         sources.map((source) => this.scrapeSource(source))
       );
@@ -121,6 +100,42 @@ export class ScraperService {
     } finally {
       this.isScraping = false;
     }
+  }
+
+  private async getActiveSources(): Promise<LpseSource[]> {
+    // First try DB sources where isActive = true
+    const dbSources = await this.prisma.lpseSource.findMany({
+      where: { isActive: true },
+    });
+    if (dbSources.length > 0) {
+      return dbSources.map((s) => ({
+        name: s.name,
+        baseUrl: s.baseUrl,
+        slug: s.slug,
+        apiSlug: s.apiSlug,
+        location: s.location || '',
+      }));
+    }
+
+    // Fallback: check env var
+    const env = process.env.LPSE_URLS;
+    if (env) {
+      try {
+        const parsed: LpseSource[] = JSON.parse(env);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((s) => ({ ...s, location: s.location || '' }));
+        }
+      } catch { /* ignore */ }
+    }
+
+    // Last resort: hardcoded defaults
+    return [
+      { name: 'LPSE Kemenkeu', baseUrl: 'https://spse.inaproc.id/kemenkeu', slug: 'LPSE_KEMEN_KEU', apiSlug: 'kemenkeu', location: 'DKI Jakarta' },
+      { name: 'LPSE Kemen PUPR', baseUrl: 'https://spse.inaproc.id/pu', slug: 'LPSE_KEMEN_PUPR', apiSlug: 'pu', location: 'DKI Jakarta' },
+      { name: 'LPSE DKI Jakarta', baseUrl: 'https://spse.inaproc.id/jakarta', slug: 'LPSE_DKI_JAKARTA', apiSlug: 'jakarta', location: 'DKI Jakarta' },
+      { name: 'LPSE Jawa Barat', baseUrl: 'https://spse.inaproc.id/jabarprov', slug: 'LPSE_JAWA_BARAT', apiSlug: 'jabarprov', location: 'Jawa Barat' },
+      { name: 'LPSE Surabaya', baseUrl: 'https://spse.inaproc.id/surabaya', slug: 'LPSE_SURABAYA', apiSlug: 'surabaya', location: 'Jawa Timur' },
+    ];
   }
 
   async seedData(): Promise<number> {

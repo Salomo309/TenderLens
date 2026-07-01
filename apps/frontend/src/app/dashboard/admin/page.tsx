@@ -5,7 +5,7 @@ import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 
-type Tab = 'stats' | 'tenants' | 'users';
+type Tab = 'stats' | 'tenants' | 'users' | 'lpse';
 
 interface Tenant {
   id: string;
@@ -30,6 +30,8 @@ export default function AdminPage() {
   const [stats, setStats] = useState<any>(null);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [lpseSources, setLpseSources] = useState<any[]>([]);
+  const [discovering, setDiscovering] = useState(false);
   const [tab, setTab] = useState<Tab>('stats');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -58,10 +60,12 @@ export default function AdminPage() {
       apiFetch('/admin/stats').catch(() => null),
       apiFetch('/admin/tenants').catch(() => null),
       apiFetch('/admin/users').catch(() => null),
-    ]).then(([s, t, u]) => {
+      apiFetch('/admin/lpse-sources').catch(() => null),
+    ]).then(([s, t, u, lpse]) => {
       setStats(s);
       setTenants(t || []);
       setUsers(u || []);
+      setLpseSources(lpse || []);
       if (!s) setError('Gagal memuat data admin.');
     }).catch((e) => setError(e.message))
     .finally(() => setLoading(false));
@@ -146,6 +150,7 @@ export default function AdminPage() {
     { key: 'stats', label: 'Ringkasan' },
     { key: 'tenants', label: 'Tenants' },
     { key: 'users', label: 'Users' },
+    { key: 'lpse', label: 'LPSE Sources' },
   ];
 
   const roleBadge = (role: string) => {
@@ -306,6 +311,102 @@ export default function AdminPage() {
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* LPSE Sources */}
+      {tab === 'lpse' && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-xs text-muted-foreground">
+              {lpseSources.filter((s: any) => s.isActive).length} aktif dari {lpseSources.length} total
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  setDiscovering(true);
+                  try {
+                    const res = await apiFetch('/admin/lpse-sources/discover', { method: 'POST' });
+                    alert(res.message);
+                    loadData();
+                  } catch (err: any) {
+                    alert(err.message || 'Gagal discover');
+                  } finally {
+                    setDiscovering(false);
+                  }
+                }}
+                disabled={discovering}
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-maroon hover:bg-maroon-dark text-white transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {discovering && <span className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                Discover LPSE
+              </button>
+            </div>
+          </div>
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="max-h-[500px] overflow-y-auto">
+              <table className="w-full text-left">
+                <thead className="sticky top-0 bg-card">
+                  <tr className="border-b border-border text-xs text-muted-foreground uppercase font-semibold">
+                    <th className="p-4">Nama</th>
+                    <th className="p-4">Slug</th>
+                    <th className="p-4">Lokasi</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4">Last Scraped</th>
+                    <th className="p-4">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border text-xs text-foreground">
+                  {lpseSources.map((s: any) => (
+                    <tr key={s.id} className="hover:bg-maroon-darker/30">
+                      <td className="p-4 font-medium">{s.name}</td>
+                      <td className="p-4 font-mono text-muted-foreground">{s.apiSlug}</td>
+                      <td className="p-4 text-muted-foreground">{s.location || '-'}</td>
+                      <td className="p-4">
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold ${
+                          s.isActive
+                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                            : 'bg-neutral-800 text-neutral-400 border border-neutral-700'
+                        }`}>
+                          {s.isActive ? 'AKTIF' : 'NONAKTIF'}
+                        </span>
+                      </td>
+                      <td className="p-4 text-muted-foreground font-mono">
+                        {s.lastScraped ? new Date(s.lastScraped).toLocaleString('id-ID') : '-'}
+                      </td>
+                      <td className="p-4">
+                        <button
+                          onClick={async () => {
+                            try {
+                              await apiFetch(`/admin/lpse-sources/${s.id}`, {
+                                method: 'PATCH',
+                                body: JSON.stringify({ isActive: !s.isActive }),
+                              });
+                              loadData();
+                            } catch (err: any) {
+                              alert(err.message);
+                            }
+                          }}
+                          className={`text-xs underline ${
+                            s.isActive ? 'text-red-400 hover:text-red-300' : 'text-emerald-400 hover:text-emerald-300'
+                          }`}
+                        >
+                          {s.isActive ? 'Nonaktifkan' : 'Aktifkan'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {lpseSources.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                        Belum ada LPSE source. Klik &quot;Discover LPSE&quot; untuk mencari dari direktori eproc.lkpp.go.id.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
