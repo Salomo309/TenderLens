@@ -45,7 +45,7 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
       <button
         onClick={() => onPageChange(page - 1)}
         disabled={page <= 1}
-        className="px-3 py-1.5 text-xs font-medium rounded-lg bg-maroon-darker hover:bg-maroon-dark text-foreground border border-border transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="px-3 py-1.5 text-xs font-medium rounded-lg bg-white hover:bg-orange-50 text-foreground border border-border transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         ‹ Prev
       </button>
@@ -60,7 +60,7 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
             className={`min-w-[32px] px-2 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
               p === page
                 ? 'bg-maroon text-white border-maroon'
-                : 'bg-maroon-darker hover:bg-maroon-dark text-foreground border-border'
+                : 'bg-white hover:bg-orange-50 text-foreground border-border'
             }`}
           >
             {p}
@@ -71,7 +71,7 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
       <button
         onClick={() => onPageChange(page + 1)}
         disabled={page >= totalPages}
-        className="px-3 py-1.5 text-xs font-medium rounded-lg bg-maroon-darker hover:bg-maroon-dark text-foreground border border-border transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="px-3 py-1.5 text-xs font-medium rounded-lg bg-white hover:bg-orange-50 text-foreground border border-border transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         Next ›
       </button>
