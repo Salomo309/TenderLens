@@ -5,7 +5,7 @@ export default function NotFound() {
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <div className="text-center space-y-4">
         <div className="text-5xl">404</div>
-        <h1 className="text-xl font-bold text-white">Halaman Tidak Ditemukan</h1>
+        <h1 className="text-xl font-bold text-foreground">Halaman Tidak Ditemukan</h1>
         <p className="text-sm text-muted-foreground">Halaman yang Anda cari tidak ada atau telah dipindahkan.</p>
         <Link
           href="/dashboard"
