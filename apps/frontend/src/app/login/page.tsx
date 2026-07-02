@@ -55,16 +55,16 @@ export default function LoginPage() {
         {/* Brand header */}
         <div className="flex flex-col items-center space-y-2">
           <Link href="/" className="flex items-center gap-2">
-            <img src="/sinyal-tender-logo.png" alt="SinyalTender" className="h-8 w-auto" />
+            <img src="/logo-title-transparent.png" alt="SinyalTender" className="h-28 w-auto" />
           </Link>
-          <h2 className="text-xl font-bold text-white pt-2">Masuk ke Akun Anda</h2>
+          <h2 className="text-xl font-bold text-foreground pt-2">Masuk ke Akun Anda</h2>
           <p className="text-xs text-muted-foreground text-center">
             Gunakan credentials perusahaan Anda untuk mengakses data monitoring LPSE.
           </p>
         </div>
 
         {error && (
-          <div className="p-3 rounded-lg bg-red-950 border border-destructive text-xs text-red-300 flex items-center gap-2">
+          <div className="p-3 rounded-lg bg-red-50 border border-destructive text-xs text-red-600 flex items-center gap-2">
             <span>⚠️</span>
             <span>{error}</span>
           </div>
@@ -87,7 +87,7 @@ export default function LoginPage() {
           <div>
             <div className="flex justify-between items-center mb-1.5">
               <label className="block text-xs font-medium text-muted-foreground">Kata Sandi</label>
-              <a href="#" className="text-[10px] text-muted-foreground hover:text-white transition-colors">
+              <a href="#" className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">
                 Lupa Sandi?
               </a>
             </div>
@@ -104,7 +104,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white text-xs"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs"
               >
                 {showPassword ? '🙈' : '👁️'}
               </button>
@@ -116,7 +116,7 @@ export default function LoginPage() {
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="rounded accent-maroon"
+              className="rounded accent-orange-500"
             />
             Ingat saya
           </label>
@@ -143,14 +143,14 @@ export default function LoginPage() {
         <button
           onClick={handleGoogleLogin}
           disabled={isLoading}
-          className="w-full bg-card hover:bg-maroon-darker border border-border py-2.5 rounded-lg text-sm text-foreground font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-card hover:bg-orange-50 border border-border py-2.5 rounded-lg text-sm text-foreground font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           🔑 Masuk dengan Akun Google
         </button>
 
         <div className="text-center text-xs text-muted-foreground pt-2">
           Belum terdaftar?{' '}
-          <Link href="/register" className="text-white hover:underline font-semibold">
+          <Link href="/register" className="text-orange-600 hover:underline font-semibold">
             Buat akun perusahaan gratis
           </Link>
         </div>

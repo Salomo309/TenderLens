@@ -55,18 +55,18 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6 antialiased">
       <div className="w-full max-w-md bg-card border border-border rounded-2xl p-8 space-y-6">
         {/* Brand header */}
-        <div className="flex flex-col items-center space-y-2">
+        <div className="flex flex-col items-center space-y-1">
           <Link href="/" className="flex items-center gap-2">
-            <img src="/sinyal-tender-logo.png" alt="SinyalTender" className="h-8 w-auto" />
+            <img src="/logo-title-transparent.png" alt="SinyalTender" className="h-48 w-auto" />
           </Link>
-          <h2 className="text-xl font-bold text-white pt-2">Daftar Akun Perusahaan</h2>
+          <h2 className="text-xl font-bold text-foreground pt-1">Daftar Akun Perusahaan</h2>
           <p className="text-xs text-muted-foreground text-center">
             Mulai uji coba gratis untuk monitoring dan notifikasi LPSE otomatis.
           </p>
         </div>
 
         {error && (
-          <div className="p-3 rounded-lg bg-red-950 border border-destructive text-xs text-red-300 flex items-center gap-2">
+          <div className="p-3 rounded-lg bg-red-50 border border-destructive text-xs text-red-600 flex items-center gap-2">
             <span>⚠️</span>
             <span>{error}</span>
           </div>
@@ -127,7 +127,7 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white text-xs"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs"
               >
                 {showPassword ? '🙈' : '👁️'}
               </button>
@@ -162,9 +162,9 @@ export default function RegisterPage() {
               type="checkbox"
               checked={agreeTerms}
               onChange={(e) => setAgreeTerms(e.target.checked)}
-              className="rounded accent-maroon mt-0.5"
+              className="rounded accent-orange-500 mt-0.5"
             />
-            <span>Saya menyetujui <a href="#" className="text-white hover:underline">Syarat &amp; Ketentuan</a> dan <a href="#" className="text-white hover:underline">Kebijakan Privasi</a> SinyalTender.</span>
+            <span>Saya menyetujui <a href="#" className="text-orange-600 hover:underline">Syarat &amp; Ketentuan</a> dan <a href="#" className="text-orange-600 hover:underline">Kebijakan Privasi</a> SinyalTender.</span>
           </label>
 
           <button
@@ -182,7 +182,7 @@ export default function RegisterPage() {
 
         <div className="text-center text-xs text-muted-foreground">
           Sudah punya akun?{' '}
-          <Link href="/login" className="text-white hover:underline font-semibold">
+          <Link href="/login" className="text-orange-600 hover:underline font-semibold">
             Masuk ke dasbor
           </Link>
         </div>
