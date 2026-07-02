@@ -1,34 +1,34 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #0c0709;
-  --color-foreground: #fdf4f6;
+  --color-background: #f8fafc;
+  --color-foreground: #0f172a;
 
-  --color-card: #180c10;
-  --color-card-foreground: #fdf4f6;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
 
-  --color-popover: #180c10;
-  --color-popover-foreground: #fdf4f6;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0f172a;
 
-  --color-primary: #e3425a;
-  --color-primary-foreground: #fdf4f6;
+  --color-primary: #f97316;
+  --color-primary-foreground: #ffffff;
 
-  --color-secondary: #2e121c;
-  --color-secondary-foreground: #fdf4f6;
+  --color-secondary: #eff6ff;
+  --color-secondary-foreground: #1e3a5f;
 
-  --color-muted: #2e121c;
-  --color-muted-foreground: #c4929e;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
 
-  --color-accent: #4d1b28;
-  --color-accent-foreground: #fdf4f6;
+  --color-accent: #fff7ed;
+  --color-accent-foreground: #9a3412;
 
-  --color-destructive: #8a1d2d;
-  --color-destructive-foreground: #fdf4f6;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
 
-  --color-border: #3d1420;
-  --color-input: #220d13;
-  --color-ring: #e3425a;
-  
+  --color-border: #e2e8f0;
+  --color-input: #ffffff;
+  --color-ring: #f97316;
+
   --radius-lg: 0.75rem;
   --radius-md: calc(0.75rem - 2px);
   --radius-sm: calc(0.75rem - 4px);
@@ -47,23 +47,23 @@
   }
 }
 
-/* Crimson color utility */
-.bg-maroon { background-color: #e3425a; }
-.bg-maroon-dark { background-color: #c42d48; }
-.bg-maroon-darker { background-color: #7a1828; }
-.text-maroon { color: #f27084; }
-.border-maroon { border-color: #c42d48; }
-.hover\:bg-maroon-dark:hover { background-color: #c42d48; }
+/* Orange accent utility classes (replacing old maroon) */
+.bg-maroon { background-color: #f97316; }
+.bg-maroon-dark { background-color: #ea580c; }
+.bg-maroon-darker { background-color: #c2410c; }
+.text-maroon { color: #fb923c; }
+.border-maroon { border-color: #f97316; }
+.hover\:bg-maroon-dark:hover { background-color: #ea580c; }
 
 /* Custom premium styling features */
 .glassmorphism {
-  background: rgba(24, 14, 18, 0.7);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(227, 66, 90, 0.15);
+  border: 1px solid rgba(249, 115, 22, 0.15);
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #fdf4f6 0%, #f27084 100%);
+  background: linear-gradient(135deg, #f97316 0%, #0ea5e9 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
