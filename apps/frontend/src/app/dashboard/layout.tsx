@@ -46,7 +46,7 @@ export default function DashboardLayout({
     const isActive = segment === item.segment;
     return isActive
       ? `${baseClass} bg-maroon-dark text-white border border-maroon`
-      : `${baseClass} text-muted-foreground hover:text-white hover:bg-maroon-darker`;
+      : `${baseClass} text-muted-foreground hover:text-foreground hover:bg-orange-50 hover:border hover:border-orange-200`;
   };
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -72,9 +72,9 @@ export default function DashboardLayout({
         {/* Brand header - fixed at top */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
           <Link href="/dashboard" className="flex items-center gap-3" onClick={closeSidebar}>
-            <img src="/sinyal-tender-logo.png" alt="SinyalTender" className="h-8 w-auto" />
+            <img src="/logo.png" alt="SinyalTender" className="h-12 w-auto" />
           </Link>
-          <button onClick={closeSidebar} className="lg:hidden text-muted-foreground hover:text-white text-lg">✕</button>
+          <button onClick={closeSidebar} className="lg:hidden text-muted-foreground hover:text-foreground text-lg">✕</button>
         </div>
 
         {/* Nav links - scrollable area */}
@@ -93,13 +93,13 @@ export default function DashboardLayout({
               {initials}
             </div>
             <div className="truncate">
-              <div className="text-xs font-medium text-white truncate">{tenant?.name || 'Loading...'}</div>
+              <div className="text-xs font-medium text-foreground truncate">{tenant?.name || 'Loading...'}</div>
               <div className="text-[10px] text-muted-foreground truncate">{user?.email || ''}</div>
             </div>
           </div>
           <button
             onClick={logout}
-            className="text-center text-xs py-1.5 rounded-md border border-border hover:bg-maroon-darker transition-colors text-muted-foreground hover:text-white"
+            className="text-center text-xs py-1.5 rounded-md border border-border hover:bg-orange-50 hover:border-orange-200 transition-colors text-muted-foreground hover:text-foreground"
           >
             Keluar (Logout)
           </button>
@@ -111,7 +111,7 @@ export default function DashboardLayout({
         {/* Top Navbar */}
         <header className="h-14 border-b border-border px-4 lg:px-8 flex items-center justify-between bg-background/80 backdrop-blur-md">
           <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-muted-foreground hover:text-white text-lg">
+            <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-muted-foreground hover:text-foreground text-lg">
               ☰
             </button>
             <div className="text-xs text-muted-foreground font-mono">

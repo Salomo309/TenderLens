@@ -30,7 +30,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-extrabold tracking-tight text-white gradient-text">Dashboard Overview</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Dashboard Overview</h1>
         <p className="text-muted-foreground text-sm">Ringkasan aktivitas tender, pemantau kata kunci, dan kesehatan crawler LPSE.</p>
       </div>
 
@@ -46,7 +46,7 @@ export default function DashboardPage() {
               <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{item.label}</span>
               <span className="text-lg">{item.icon}</span>
             </div>
-            <div className={`text-2xl font-bold font-mono ${item.green ? 'text-emerald-400 flex items-center gap-2' : 'text-white'}`}>
+            <div className={`text-2xl font-bold font-mono ${item.green ? 'text-emerald-500 flex items-center gap-2' : 'text-foreground'}`}>
               {item.green && <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block" />}
               {item.value}
             </div>
@@ -57,8 +57,8 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 rounded-xl border border-border bg-card overflow-hidden">
-          <div className="p-4 border-b border-border bg-maroon-darker/30 flex items-center justify-between">
-            <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Tender Terbaru</h3>
+          <div className="p-4 border-b border-border bg-gradient-to-r from-orange-50 to-sky-50 flex items-center justify-between">
+            <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Tender Terbaru</h3>
           </div>
           {stats.recentTenders?.length > 0 ? (
             <table className="w-full text-left">
@@ -72,12 +72,12 @@ export default function DashboardPage() {
               </thead>
               <tbody className="divide-y divide-border text-xs text-foreground">
                 {stats.recentTenders.map((t: any) => (
-                  <tr key={t.id} className="hover:bg-maroon-darker/30">
+                  <tr key={t.id} className="hover:bg-orange-50">
                     <td className="p-3 text-muted-foreground max-w-[120px] truncate">{t.agency}</td>
                     <td className="p-3 font-medium text-foreground max-w-[200px] truncate">{t.title}</td>
                     <td className="p-3 font-mono text-foreground">{formatCurrency(Number(t.pagu))}</td>
                     <td className="p-3">
-                      <span className="px-1.5 py-0.5 rounded bg-maroon-darker text-[10px] font-mono text-foreground">{t.stage}</span>
+                      <span className="px-1.5 py-0.5 rounded bg-orange-100 text-[10px] font-mono text-orange-700">{t.stage}</span>
                     </td>
                   </tr>
                 ))}
@@ -89,20 +89,20 @@ export default function DashboardPage() {
         </div>
 
         <div className="rounded-xl border border-border bg-card overflow-hidden">
-          <div className="p-4 border-b border-border bg-maroon-darker/30">
-            <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Aktivitas Keyword</h3>
+          <div className="p-4 border-b border-border bg-gradient-to-r from-sky-50 to-orange-50">
+            <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Aktivitas Keyword</h3>
           </div>
           {stats.keywordActivity?.length > 0 ? (
             <div className="divide-y divide-border">
               {stats.keywordActivity.map((k: any, i: number) => (
                 <div key={i} className="p-4 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-white">{k.keyword}</span>
+                    <span className="text-xs font-medium text-foreground">{k.keyword}</span>
                     <span className="text-[10px] text-muted-foreground font-mono">{k.count} cocok</span>
                   </div>
                   <div className="flex gap-1.5">
                     {k.channels?.map((ch: string) => (
-                      <span key={ch} className="px-1.5 py-0.5 rounded bg-maroon-darker text-[9px] font-mono text-muted-foreground">{ch}</span>
+                      <span key={ch} className="px-1.5 py-0.5 rounded bg-orange-100 text-[9px] font-mono text-orange-700">{ch}</span>
                     ))}
                   </div>
                 </div>
