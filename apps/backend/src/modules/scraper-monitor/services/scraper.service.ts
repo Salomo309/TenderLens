@@ -396,6 +396,7 @@ export class ScraperService {
     const rawTitle = (row[1] || '').replace(/<[^>]+>/g, '').trim();
     const agency = (row[2] || source.name).replace(/\s+/g, ' ').trim();
     const paguText = (row[4] || '0').replace(/\s+/g, ' ').trim();
+    const hpsText = (row[5] || '0').replace(/\s+/g, ' ').trim();
     const statusText = (row[3] || '').toLowerCase();
 
     return {
@@ -403,7 +404,7 @@ export class ScraperService {
       title: rawTitle.replace(/\s+/g, ' ').trim(),
       agency,
       pagu: this.parseFormattedPagu(paguText),
-      hps: this.parseFormattedPagu(paguText),
+      hps: this.parseFormattedPagu(hpsText),
       category: this.inferCategory(rawTitle),
       stage: this.mapStage(statusText),
       location: source.location,
