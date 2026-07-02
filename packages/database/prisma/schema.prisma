@@ -144,8 +144,8 @@ model Tender {
   lpseId         String         @unique // Extracted LPSE reference number
   title          String
   agency         String         // Instansi (e.g. Kementerian PU, Pemprov DKI)
-  pagu           Decimal        @db.Decimal(15, 2) // Project Budget Allocation
-  hps            Decimal        @db.Decimal(15, 2) // Owner's Estimate (Harga Perkiraan Sendiri)
+  pagu           Decimal        @db.Decimal(18, 2) // Project Budget Allocation
+  hps            Decimal        @db.Decimal(18, 2) // Owner's Estimate (Harga Perkiraan Sendiri)
   category       TenderCategory @default(OTHER)
   stage          TenderStage    @default(PENGUMUMAN)
   location       String         // e.g. DKI Jakarta, Jawa Barat
