@@ -5,6 +5,13 @@ import { Providers } from './providers';
 export const metadata: Metadata = {
   title: 'SinyalTender - Indonesian LPSE Procurement Intelligence Platform',
   description: 'Track, analyze, and alert procurement tenders from Indonesian government agencies (LPSE).',
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/logo-only.png', type: 'image/png', sizes: '2048x2048' },
+    ],
+    apple: '/logo-only.png',
+  },
 };
 
 export default function RootLayout({
