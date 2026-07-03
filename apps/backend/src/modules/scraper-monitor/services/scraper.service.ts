@@ -378,54 +378,23 @@ export class ScraperService {
   private async fetchTenders(source: LpseSource): Promise<TenderParseResult[]> {
     try {
       const pageUrl = `${source.baseUrl}/lelang`;
-      const apiSlug = source.apiSlug || source.slug;
-      const apiPath = `/${apiSlug}/dt/lelang`;
+      this.logger.log(`[${source.slug}] Fetching tenders via Flaresolverr @ ${pageUrl}`);
 
-      this.logger.log(`[${source.slug}] Fetching tenders via Puppeteer browser @ ${pageUrl}`);
+      const fsResult = await this.flaresolverrService.fetchSession(pageUrl);
+      const html = fsResult.html;
 
-      // Step 1: Use Flaresolverr to bypass Cloudflare and get session cookies
-      this.logger.log(`[${source.slug}] Getting session cookies via Flaresolverr...`);
-      let flaresolverrCookies: { name: string; value: string }[] = [];
-      try {
-        const fsResult = await this.flaresolverrService.fetchSession(pageUrl);
-        flaresolverrCookies = fsResult.cookies.map((c) => {
-          const eqIdx = c.indexOf('=');
-          return { name: c.substring(0, eqIdx), value: c.substring(eqIdx + 1) };
-        });
-        this.logger.log(`[${source.slug}] Got ${flaresolverrCookies.length} cookies from Flaresolverr`);
-      } catch (fsErr) {
-        this.logger.warn(`[${source.slug}] Flaresolverr failed: ${(fsErr as Error).message}, trying without cookies`);
-      }
+      const rows = this.parseHtmlTableRows(html);
+      this.logger.log(`[${source.slug}] Parsed ${rows.length} rows from Flaresolverr HTML`);
 
-      // Step 2: Use Puppeteer with the cookies to scrape DataTable
-      const jsonTexts = await this.puppeteerService.scrapeTendersViaBrowser(
-        pageUrl,
-        apiPath,
-        flaresolverrCookies,
-        200,
-        5,
-      );
-
-      const allRows: any[][] = [];
-      for (const jsonText of jsonTexts) {
-        try {
-          const data = JSON.parse(jsonText);
-          const rows: any[][] = data.data || [];
-          allRows.push(...rows);
-        } catch (e) {
-          this.logger.warn(`[${source.slug}] Failed to parse one JSON response`);
-        }
-      }
-
-      const allTenders = allRows.map((row) => this.parseApiRow(row, source));
+      const allTenders = rows.map((row) => this.parseApiRow(row, source));
 
       if (allTenders.length === 0) {
-        this.logger.warn(`[${source.slug}] No tenders found via browser scrape`);
+        this.logger.warn(`[${source.slug}] No tenders found via Flaresolverr scrape`);
       }
 
       return allTenders;
     } catch (err: any) {
-      this.logger.error(`[${source.slug}] fetchTenders via browser failed: ${err.message}`);
+      this.logger.error(`[${source.slug}] fetchTenders failed: ${err.message}`);
       return [];
     }
   }
@@ -475,6 +444,40 @@ export class ScraperService {
       this.logger.warn(`[${source.slug}] Could not get authenticityToken from any method`);
     }
     return { token, cookies, userAgent };
+  }
+
+  private parseHtmlTableRows(html: string): any[][] {
+    const rows: any[][] = [];
+    const tbodyMatch = html.match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/i);
+    if (!tbodyMatch) return rows;
+
+    const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+    let trMatch: RegExpExecArray | null;
+    while ((trMatch = trRegex.exec(tbodyMatch[1])) !== null) {
+      const tdRegex = /<td[^>]*>([\s\S]*?)<\/td>/gi;
+      const cells: string[] = [];
+      let tdMatch: RegExpExecArray | null;
+      while ((tdMatch = tdRegex.exec(trMatch[1])) !== null) {
+        cells.push(tdMatch[1].trim());
+      }
+      if (cells.length >= 5) {
+        rows.push([
+          this.stripHtml(cells[0]), // ID
+          cells[1],                 // Title (keep HTML for badges)
+          this.stripHtml(cells[2]), // Agency
+          this.stripHtml(cells[3]), // Status
+          this.stripHtml(cells[4]), // Pagu
+          '0',                      // HPS (not rendered in HTML)
+          '',                       // Extra columns
+          '',
+        ]);
+      }
+    }
+    return rows;
+  }
+
+  private stripHtml(text: string): string {
+    return text.replace(/<[^>]+>/g, '').trim();
   }
 
   private extractToken(html: string): string {
