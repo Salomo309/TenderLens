@@ -4,9 +4,14 @@ import type { Browser, Page } from 'puppeteer';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const puppeteerExtra = require('puppeteer-extra');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const stealthPlugin = require('puppeteer-extra-plugin-stealth');
+const StealthPlugin = stealthPlugin.default || stealthPlugin;
 
-puppeteerExtra.use(StealthPlugin());
+try {
+  puppeteerExtra.use(StealthPlugin());
+} catch (e) {
+  // stealth plugin failed to initialize, continuing without it
+}
 
 @Injectable()
 export class PuppeteerService implements OnModuleDestroy {
@@ -27,19 +32,59 @@ export class PuppeteerService implements OnModuleDestroy {
     }
   }
 
+  async fetchDataViaAjax(
+    pageUrl: string,
+    apiUrl: string,
+    formData: Record<string, string>,
+    cookies: { name: string; value: string }[],
+    userAgent: string,
+  ): Promise<string> {
+    const page = await this.getPageForAjax(userAgent, cookies);
+    try {
+      await page.goto(pageUrl, { waitUntil: 'networkidle0', timeout: 30000 });
+
+      const result = await page.evaluate(async (params) => {
+        const formBody = new URLSearchParams(params.formData).toString();
+        const response = await fetch(params.apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json, text/plain, */*',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Referer': params.pageUrl,
+          },
+          body: formBody,
+        });
+        return response.text();
+      }, { apiUrl, pageUrl, formData });
+
+      return result;
+    } finally {
+      await page.close().catch(() => {});
+    }
+  }
+
+  private getLaunchOptions() {
+    const args = [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--single-process',
+    ];
+    const options: any = { headless: true, args };
+    const systemChromium = '/usr/bin/chromium';
+    const fs = require('fs');
+    if (fs.existsSync(systemChromium)) {
+      options.executablePath = systemChromium;
+    }
+    return options;
+  }
+
   private async getPage(): Promise<Page> {
     if (!this.browser) {
       this.logger.log('Launching headless browser...');
-      this.browser = await puppeteerExtra.launch({
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-          '--single-process',
-        ],
-      });
+      this.browser = await puppeteerExtra.launch(this.getLaunchOptions());
       this.logger.log('Browser launched.');
     }
     const page = await this.browser.newPage();
@@ -49,6 +94,37 @@ export class PuppeteerService implements OnModuleDestroy {
     await page.setExtraHTTPHeaders({
       'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
     });
+    return page;
+  }
+
+  private async getPageForAjax(
+    userAgent: string,
+    cookies: { name: string; value: string }[],
+  ): Promise<Page> {
+    if (!this.browser) {
+      this.logger.log('Launching headless browser...');
+      this.browser = await puppeteerExtra.launch(this.getLaunchOptions());
+      this.logger.log('Browser launched.');
+    }
+    const page = await this.browser.newPage();
+
+    if (userAgent) {
+      await page.setUserAgent(userAgent);
+    }
+
+    if (cookies.length > 0) {
+      const urlObj = new URL('https://spse.inaproc.id');
+      const cookieParams = cookies.map((c) => ({
+        name: c.name,
+        value: c.value,
+        domain: urlObj.hostname,
+        path: '/',
+        httpOnly: false,
+        secure: true,
+      }));
+      await page.setCookie(...cookieParams);
+    }
+
     return page;
   }
 

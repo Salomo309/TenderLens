@@ -481,6 +481,7 @@ export class ScraperService {
     length = 200,
   ): Promise<TenderParseResult[]> {
     const apiUrl = `${source.baseUrl}/dt/lelang?tahun=${new Date().getFullYear()}`;
+    const pageUrl = `${source.baseUrl}/lelang`;
     const formData: Record<string, string> = {
       authenticityToken: token,
       draw: '1',
@@ -499,7 +500,7 @@ export class ScraperService {
             'Content-Type': 'application/x-www-form-urlencoded',
             'X-Requested-With': 'XMLHttpRequest',
             'Cookie': cookies,
-            'Referer': `${source.baseUrl}/lelang`,
+            'Referer': pageUrl,
           },
         });
 
@@ -507,14 +508,42 @@ export class ScraperService {
         const rawRows: any[][] = responseData.data || [];
         return rawRows.map((row) => this.parseApiRow(row, source));
       } catch (err) {
-        this.logger.warn(`[${source.slug}] Direct POST failed, trying via Flaresolverr...`);
+        this.logger.warn(`[${source.slug}] Direct POST failed, trying Puppeteer with fetch...`);
       }
     }
 
-    const result = await this.flaresolverrService.postWithSession(apiUrl, formData);
-    const responseData = JSON.parse(result.html);
-    const rawRows: any[][] = responseData.data || [];
-    return rawRows.map((row) => this.parseApiRow(row, source));
+    try {
+      this.logger.log(`[${source.slug}] Fetching via Puppeteer+fetch...`);
+      const cookieObjects = cookies
+        .split('; ')
+        .filter(Boolean)
+        .map((c) => {
+          const [name, ...rest] = c.split('=');
+          return { name, value: rest.join('=') };
+        });
+      const jsonText = await this.puppeteerService.fetchDataViaAjax(
+        pageUrl,
+        apiUrl,
+        formData,
+        cookieObjects,
+        userAgent,
+      );
+      const responseData = JSON.parse(jsonText);
+      const rawRows: any[][] = responseData.data || [];
+      return rawRows.map((row) => this.parseApiRow(row, source));
+    } catch (pupErr) {
+      this.logger.warn(`[${source.slug}] Puppeteer+fetch failed (${(pupErr as Error).message}), trying Flaresolverr...`);
+    }
+
+    try {
+      const result = await this.flaresolverrService.postWithSession(apiUrl, formData);
+      const responseData = JSON.parse(result.html);
+      const rawRows: any[][] = responseData.data || [];
+      return rawRows.map((row) => this.parseApiRow(row, source));
+    } catch (fsErr) {
+      this.logger.error(`[${source.slug}] All fetch methods failed: ${(fsErr as Error).message}`);
+      return [];
+    }
   }
 
   private parseApiRow(row: any[], source: LpseSource): TenderParseResult {
