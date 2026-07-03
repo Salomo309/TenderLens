@@ -116,7 +116,7 @@ export default function LoginPage() {
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="rounded accent-orange-500"
+              className="rounded accent-primary"
             />
             Ingat saya
           </label>
@@ -143,14 +143,14 @@ export default function LoginPage() {
         <button
           onClick={handleGoogleLogin}
           disabled={isLoading}
-          className="w-full bg-card hover:bg-orange-50 border border-border py-2.5 rounded-lg text-sm text-foreground font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-card hover:bg-teal-50 border border-border py-2.5 rounded-lg text-sm text-foreground font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           🔑 Masuk dengan Akun Google
         </button>
 
         <div className="text-center text-xs text-muted-foreground pt-2">
           Belum terdaftar?{' '}
-          <Link href="/register" className="text-orange-600 hover:underline font-semibold">
+          <Link href="/register" className="text-teal-600 hover:underline font-semibold">
             Buat akun perusahaan gratis
           </Link>
         </div>

@@ -29,7 +29,7 @@ export function Table<T extends { id: string }>({ columns, data, emptyMessage = 
       </thead>
       <tbody className="divide-y divide-neutral-800/60 text-xs text-foreground">
         {data.map((item) => (
-          <tr key={item.id} className="hover:bg-orange-50">
+          <tr key={item.id} className="hover:bg-teal-50">
             {columns.map((col) => (
               <td key={col.key} className={`p-4 ${col.className || ''}`}>{col.render(item)}</td>
             ))}

@@ -57,7 +57,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 rounded-xl border border-border bg-card overflow-hidden">
-          <div className="p-4 border-b border-border bg-gradient-to-r from-orange-50 to-sky-50 flex items-center justify-between">
+          <div className="p-4 border-b border-border bg-gradient-to-r from-teal-50 to-cyan-50 flex items-center justify-between">
             <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Tender Terbaru</h3>
           </div>
           {stats.recentTenders?.length > 0 ? (
@@ -72,12 +72,12 @@ export default function DashboardPage() {
               </thead>
               <tbody className="divide-y divide-border text-xs text-foreground">
                 {stats.recentTenders.map((t: any) => (
-                  <tr key={t.id} className="hover:bg-orange-50">
+                  <tr key={t.id} className="hover:bg-teal-50">
                     <td className="p-3 text-muted-foreground max-w-[120px] truncate">{t.agency}</td>
                     <td className="p-3 font-medium text-foreground max-w-[200px] truncate">{t.title}</td>
                     <td className="p-3 font-mono text-foreground">{formatCurrency(Number(t.pagu))}</td>
                     <td className="p-3">
-                      <span className="px-1.5 py-0.5 rounded bg-orange-100 text-[10px] font-mono text-orange-700">{t.stage}</span>
+                      <span className="px-1.5 py-0.5 rounded bg-teal-100 text-[10px] font-mono text-teal-700">{t.stage}</span>
                     </td>
                   </tr>
                 ))}
@@ -89,7 +89,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="rounded-xl border border-border bg-card overflow-hidden">
-          <div className="p-4 border-b border-border bg-gradient-to-r from-sky-50 to-orange-50">
+          <div className="p-4 border-b border-border bg-gradient-to-r from-sky-50 to-teal-50">
             <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Aktivitas Keyword</h3>
           </div>
           {stats.keywordActivity?.length > 0 ? (
@@ -102,7 +102,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex gap-1.5">
                     {k.channels?.map((ch: string) => (
-                      <span key={ch} className="px-1.5 py-0.5 rounded bg-orange-100 text-[9px] font-mono text-orange-700">{ch}</span>
+                      <span key={ch} className="px-1.5 py-0.5 rounded bg-teal-100 text-[9px] font-mono text-teal-700">{ch}</span>
                     ))}
                   </div>
                 </div>

@@ -233,9 +233,9 @@ export default function RegisterPage() {
                 type="checkbox"
                 checked={agreeTerms}
                 onChange={(e) => setAgreeTerms(e.target.checked)}
-                className="rounded accent-orange-500 mt-0.5"
+                className="rounded accent-primary mt-0.5"
               />
-              <span>Saya menyetujui <a href="#" className="text-orange-600 hover:underline">Syarat &amp; Ketentuan</a> dan <a href="#" className="text-orange-600 hover:underline">Kebijakan Privasi</a> SinyalTender.</span>
+              <span>Saya menyetujui <a href="#" className="text-teal-600 hover:underline">Syarat &amp; Ketentuan</a> dan <a href="#" className="text-teal-600 hover:underline">Kebijakan Privasi</a> SinyalTender.</span>
             </label>
 
             <button
@@ -298,7 +298,7 @@ export default function RegisterPage() {
         {step === 'form' && (
           <div className="text-center text-xs text-muted-foreground">
             Sudah punya akun?{' '}
-            <Link href="/login" className="text-orange-600 hover:underline font-semibold">
+            <Link href="/login" className="text-teal-600 hover:underline font-semibold">
               Masuk ke dasbor
             </Link>
           </div>

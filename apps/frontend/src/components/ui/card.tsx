@@ -12,7 +12,7 @@ export function Card({ children, className = '', title, subtitle }: CardProps) {
     <div className={`rounded-xl border border-border bg-card overflow-hidden ${className}`}>
       {(title || subtitle) && (
         <div className="p-4 border-b border-border bg-maroon-darker/30">
-          {title && <h3 className="text-xs font-semibold text-white uppercase tracking-wider">{title}</h3>}
+          {title && <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">{title}</h3>}
           {subtitle && <p className="text-[10px] text-muted-foreground mt-0.5">{subtitle}</p>}
         </div>
       )}
@@ -50,7 +50,7 @@ export function StatCard({
         <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{label}</span>
         {icon && <span className="text-lg">{icon}</span>}
       </div>
-      <div className={`text-2xl font-bold font-mono ${green ? 'text-emerald-400 flex items-center gap-2' : 'text-white'}`}>
+      <div className={`text-2xl font-bold font-mono ${green ? 'text-emerald-400 flex items-center gap-2' : 'text-foreground'}`}>
         {green && <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block" />}
         {value}
       </div>

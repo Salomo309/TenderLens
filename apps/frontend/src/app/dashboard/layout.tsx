@@ -50,7 +50,7 @@ export default function DashboardLayout({
     const isActive = segment === item.segment;
     return isActive
       ? `${baseClass} bg-maroon-dark text-white border border-maroon`
-      : `${baseClass} text-muted-foreground hover:text-foreground hover:bg-orange-50 hover:border hover:border-orange-200`;
+      : `${baseClass} text-muted-foreground hover:text-foreground hover:bg-teal-50 hover:border hover:border-teal-200`;
   };
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -103,7 +103,7 @@ export default function DashboardLayout({
           </div>
           <button
             onClick={logout}
-            className="text-center text-xs py-1.5 rounded-md border border-border hover:bg-orange-50 hover:border-orange-200 transition-colors text-muted-foreground hover:text-foreground"
+            className="text-center text-xs py-1.5 rounded-md border border-border hover:bg-teal-50 hover:border-teal-200 transition-colors text-muted-foreground hover:text-foreground"
           >
             Keluar (Logout)
           </button>

@@ -161,14 +161,14 @@ function TendersPageInner() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-extrabold tracking-tight text-white gradient-text">Tender LPSE Monitor</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight gradient-text">Tender LPSE Monitor</h1>
         <p className="text-muted-foreground text-sm">Pantau seluruh pengadaan barang dan jasa dari berbagai instansi di Indonesia.</p>
       </div>
 
       <div className="flex gap-1 p-1 rounded-lg bg-card border border-border w-fit">
         {([{ key: 'all', label: 'Semua' }, { key: 'saved', label: 'Tersimpan' }] as const).map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)}
-            className={`px-4 py-1.5 text-xs font-medium rounded-md transition-colors ${tab === t.key ? 'bg-maroon-darker text-white' : 'text-muted-foreground hover:text-white'}`}>
+            className={`px-4 py-1.5 text-xs font-medium rounded-md transition-colors ${tab === t.key ? 'bg-maroon-darker text-white' : 'text-muted-foreground hover:text-foreground'}`}>
             {t.label}
           </button>
         ))}
@@ -273,12 +273,12 @@ function TendersPageInner() {
                       <span className="block text-[11px] text-muted-foreground">HPS: {tender.hps ? formatCurrency(Number(tender.hps)) : '-'}</span>
                     </td>
                     <td className="p-4">
-                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-maroon-darker text-foreground mb-1">{tender.location || '-'}</span>
+                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-maroon-darker text-white mb-1">{tender.location || '-'}</span>
                       <span className="block text-[10px] text-muted-foreground font-mono">{tender.stage || '-'}</span>
                     </td>
                     <td className="p-4 text-right space-x-2" onClick={(e) => e.stopPropagation()}>
                       <button onClick={() => handleToggleSave(tender.id)}
-                        className={`px-2 py-1.5 text-[11px] rounded transition-colors border ${isSaved ? 'bg-emerald-950/50 text-emerald-300 border-emerald-800' : 'bg-maroon-darker hover:bg-maroon-dark text-foreground border-border'}`}>
+                        className={`px-2 py-1.5 text-[11px] rounded transition-colors border ${isSaved ? 'bg-emerald-950/50 text-emerald-300 border-emerald-800' : 'bg-maroon-darker hover:bg-maroon-dark text-white border-border'}`}>
                         {isSaved ? '💾 Tersimpan' : '💾 Simpan'}
                       </button>
                       <button onClick={() => handleAiSummary(tender)}
@@ -305,9 +305,9 @@ function TendersPageInner() {
             <div className="flex justify-between items-start">
               <div className="space-y-1">
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Detail Tender</span>
-                <h2 className="text-xl font-bold text-white leading-tight">{selectedTender.title}</h2>
+                <h2 className="text-xl font-bold text-foreground leading-tight">{selectedTender.title}</h2>
               </div>
-              <button onClick={() => setSelectedTender(null)} className="text-muted-foreground hover:text-white text-lg font-bold">✕</button>
+              <button onClick={() => setSelectedTender(null)} className="text-muted-foreground hover:text-foreground text-lg font-bold">✕</button>
             </div>
             <hr className="border-border" />
 
@@ -334,7 +334,7 @@ function TendersPageInner() {
               </div>
               <div className="space-y-1">
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase">Tahap</span>
-                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-maroon-darker text-foreground">{selectedTender.stage || '-'}</span>
+                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-maroon-darker text-white">{selectedTender.stage || '-'}</span>
               </div>
               <div className="space-y-1">
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase">Lokasi</span>
@@ -356,7 +356,7 @@ function TendersPageInner() {
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Analisis AI</span>
                   <button onClick={() => handleAiSummary(selectedTender)} disabled={summaryLoading}
-                    className="text-[10px] text-muted-foreground hover:text-white transition-colors">↻ Regenerate</button>
+                    className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">↻ Regenerate</button>
                 </div>
                 <div className="space-y-4">
                   <div>
@@ -372,7 +372,7 @@ function TendersPageInner() {
                     <div className="flex flex-wrap gap-2">
                       {(selectedTender.aiSummary?.requiredCertifications || []).length > 0
                         ? selectedTender.aiSummary.requiredCertifications.map((cert: string, i: number) => (
-                            <span key={i} className="px-2 py-1 rounded bg-maroon-darker border border-border text-[10px] font-mono text-foreground">🛡️ {cert}</span>
+                            <span key={i} className="px-2 py-1 rounded bg-maroon-darker border border-border text-[10px] font-mono text-white">🛡️ {cert}</span>
                           ))
                         : <span className="text-[10px] text-muted-foreground">Tidak ada data</span>}
                     </div>

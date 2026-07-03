@@ -65,7 +65,7 @@ export default function ScraperMonitorPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-extrabold tracking-tight text-white gradient-text">Scraper Monitor</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight gradient-text">Scraper Monitor</h1>
         <p className="text-muted-foreground text-sm">Panel pemantauan status kesehatan, waktu aktif (uptime), dan catatan performa crawler LPSE.</p>
       </div>
 

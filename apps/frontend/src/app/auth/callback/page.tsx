@@ -27,7 +27,7 @@ export default function AuthCallbackPage() {
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <div className="text-center space-y-4">
           <div className="text-4xl">⚠️</div>
-          <h1 className="text-xl font-bold text-white">Gagal Otentikasi</h1>
+          <h1 className="text-xl font-bold text-foreground">Gagal Otentikasi</h1>
           <p className="text-sm text-muted-foreground">{error}</p>
           <button
             onClick={() => router.push('/login')}

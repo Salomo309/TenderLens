@@ -168,7 +168,7 @@ export default function BillingPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-extrabold tracking-tight text-white gradient-text">Billing Portal</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight gradient-text">Billing Portal</h1>
         <p className="text-muted-foreground text-sm">Kelola langganan, lihat riwayat pembayaran, dan tingkatkan paket lisensi Anda.</p>
       </div>
 
@@ -179,7 +179,7 @@ export default function BillingPage() {
       )}
 
       {invoices.some((inv: any) => inv.status === 'PENDING') && (
-        <div className="p-3 rounded-xl border border-amber-800/50 bg-amber-950/20 text-xs text-amber-300/80 flex items-center gap-2">
+        <div className="p-3 rounded-xl border border-amber-800 bg-amber-950/60 text-xs text-amber-300 flex items-center gap-2">
           <span>⏳</span>
           <span>Anda memiliki invoice <strong>PENDING</strong>. Invoice ini akan otomatis <strong>KADALUARSA</strong> saat Anda memulai upgrade baru.</span>
         </div>
@@ -192,7 +192,7 @@ export default function BillingPage() {
             <div className="space-y-1">
               <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Paket Saat Ini</span>
               <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-bold text-white">{plan?.label || currentTier} LICENSE</h2>
+                <h2 className="text-2xl font-bold text-foreground">{plan?.label || currentTier} LICENSE</h2>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                   status === 'ACTIVE' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-amber-950 text-amber-300 border border-amber-800'
                 }`}>
@@ -201,7 +201,7 @@ export default function BillingPage() {
               </div>
             </div>
             <div className="text-right">
-              <div className="text-lg font-bold text-white font-mono">
+              <div className="text-lg font-bold text-foreground font-mono">
                 {plan?.price ? formatCurrency(plan.price) : 'Rp 0'}
               </div>
               <div className="text-[10px] text-muted-foreground">{currentTier === 'FREE_TRIAL' ? 'Free Trial' : 'per bulan'}</div>
@@ -242,7 +242,7 @@ export default function BillingPage() {
                 Tingkatkan Lisensi
               </button>
             )}
-            <button className="px-5 py-2 bg-maroon-darker hover:bg-maroon-dark border border-border text-foreground text-xs font-semibold rounded-lg transition-colors">
+            <button className="px-5 py-2 bg-maroon-darker hover:bg-maroon-dark border border-border text-white text-xs font-semibold rounded-lg transition-colors">
               Perbarui Pembayaran
             </button>
           </div>
@@ -252,7 +252,7 @@ export default function BillingPage() {
       {/* All Plans Comparison */}
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="p-4 border-b border-border bg-maroon-darker/30">
-          <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Bandingkan Paket</h3>
+          <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Bandingkan Paket</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-6">
           {TIER_ORDER.filter(t => allPlans[t]).map((tierKey) => {
@@ -267,10 +267,10 @@ export default function BillingPage() {
                   <span className={`text-[10px] font-semibold uppercase tracking-widest block ${isCurrent ? 'text-white' : 'text-muted-foreground'}`}>
                     {p.label} {isCurrent && '(Aktif)'}
                   </span>
-                  <div className="text-2xl font-extrabold text-white">
-                    {formatCurrency(p.price)} <span className="text-[10px] font-normal text-muted-foreground">/ bln</span>
+                  <div className={`text-2xl font-extrabold ${isCurrent ? 'text-white' : 'text-foreground'}`}>
+                    {formatCurrency(p.price)} <span className={`text-[10px] font-normal ${isCurrent ? 'text-white/50' : 'text-muted-foreground'}`}>/ bln</span>
                   </div>
-                  <ul className="space-y-1.5 text-xs text-foreground pt-1">
+                  <ul className={`space-y-1.5 text-xs ${isCurrent ? 'text-white/80' : 'text-foreground'} pt-1`}>
                     <li>✓ {p.maxKeywords >= 9999 ? 'Unlimited' : p.maxKeywords} kata kunci</li>
                     <li>✓ {p.maxSavedTenders >= 9999 ? 'Unlimited' : p.maxSavedTenders} tender tersimpan</li>
                     <li>✓ {p.maxAiSummariesPerMonth >= 9999 ? 'Unlimited' : p.maxAiSummariesPerMonth} AI Summary / bln</li>
@@ -301,7 +301,7 @@ export default function BillingPage() {
       {/* Invoice History */}
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="p-4 border-b border-border bg-maroon-darker/30">
-          <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Riwayat Pembayaran</h3>
+          <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Riwayat Pembayaran</h3>
         </div>
         {invoices.length === 0 ? (
           <div className="p-8 text-center text-xs text-muted-foreground">Belum ada invoice.</div>
@@ -344,12 +344,12 @@ export default function BillingPage() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="w-full max-w-md bg-card border border-border rounded-2xl p-8 space-y-5">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white">Konfirmasi Upgrade</h3>
-              <button onClick={() => setShowUpgrade(false)} className="text-muted-foreground hover:text-white text-lg font-bold">✕</button>
+              <h3 className="text-lg font-bold text-foreground">Konfirmasi Upgrade</h3>
+              <button onClick={() => setShowUpgrade(false)} className="text-muted-foreground hover:text-foreground text-lg font-bold">✕</button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Anda akan meningkatkan ke <strong className="text-white">{allPlans[selectedTier]?.label}</strong> sebesar
-              {' '}<strong className="text-white font-mono">{formatCurrency(allPlans[selectedTier]?.price || 0)}/bulan</strong>.
+              Anda akan meningkatkan ke <strong className="text-foreground">{allPlans[selectedTier]?.label}</strong> sebesar
+              {' '}<strong className="text-foreground font-mono">{formatCurrency(allPlans[selectedTier]?.price || 0)}/bulan</strong>.
             </p>
             <p className="text-xs text-amber-400/80 bg-amber-950/30 border border-amber-800/40 rounded-lg p-3">
               Jika Anda menutup popup pembayaran, invoice akan tersimpan sebagai <strong>PENDING</strong>.
@@ -382,7 +382,7 @@ export default function BillingPage() {
                 className="flex-1 px-4 py-2 bg-maroon hover:bg-maroon-dark text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                 {upgrading ? <span className="h-4 w-4 border-2 border-border border-t-transparent rounded-full animate-spin" /> : 'Lanjutkan Pembayaran'}
               </button>
-              <button onClick={() => { setShowUpgrade(false); setSelectedPayment(''); }} className="flex-1 px-4 py-2 bg-maroon-darker hover:bg-maroon-dark border border-border text-foreground text-xs font-semibold rounded-lg transition-colors">
+              <button onClick={() => { setShowUpgrade(false); setSelectedPayment(''); }} className="flex-1 px-4 py-2 bg-maroon-darker hover:bg-maroon-dark border border-border text-white text-xs font-semibold rounded-lg transition-colors">
                 Batal
               </button>
             </div>

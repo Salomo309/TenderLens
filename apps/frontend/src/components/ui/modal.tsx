@@ -29,8 +29,8 @@ export function Modal({ isOpen, onClose, title, children, footer }: ModalProps) 
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-white">{title}</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-white text-lg font-bold">
+          <h3 className="text-lg font-bold text-foreground">{title}</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-lg font-bold">
             ✕
           </button>
         </div>

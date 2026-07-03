@@ -6,10 +6,10 @@ import Link from 'next/link';
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   return (
-    <div className="min-h-screen bg-background text-foreground antialiased selection:bg-orange-200 selection:text-orange-900">
+    <div className="min-h-screen bg-background text-foreground antialiased selection:bg-teal-200 selection:text-teal-900">
       {/* Decorative background blobs */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-200/40 to-orange-300/10 blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-teal-200/40 to-teal-300/10 blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-sky-200/40 to-blue-300/10 blur-3xl" />
       </div>
 
@@ -34,7 +34,7 @@ export default function LandingPage() {
           </Link>
           <Link
             href="/login"
-            className="px-5 py-2 text-xs font-semibold rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-200 transition-colors"
+            className="px-5 py-2 text-xs font-semibold rounded-lg bg-teal-50 text-teal-600 hover:bg-teal-100 border border-teal-200 transition-colors"
           >
             Masuk Platform
           </Link>
@@ -68,7 +68,7 @@ export default function LandingPage() {
             <Link
               href="/login"
               onClick={() => setMobileMenuOpen(false)}
-              className="mt-2 text-center px-5 py-2 text-xs font-semibold rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-200 transition-colors"
+              className="mt-2 text-center px-5 py-2 text-xs font-semibold rounded-lg bg-teal-50 text-teal-600 hover:bg-teal-100 border border-teal-200 transition-colors"
             >
               Masuk Platform
             </Link>
@@ -80,13 +80,13 @@ export default function LandingPage() {
       <section className="relative max-w-6xl mx-auto px-6 pt-28 pb-20 text-center space-y-8">
         {/* Subtle dot pattern */}
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:20px_20px] opacity-50" />
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-orange-50 to-sky-50 border border-orange-200/50 text-[11px] font-semibold text-orange-600 shadow-sm">
-          <span className="h-1.5 w-1.5 rounded-full bg-orange-400 animate-pulse" />
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-200/50 text-[11px] font-semibold text-teal-600 shadow-sm">
+          <span className="h-1.5 w-1.5 rounded-full bg-teal-400 animate-pulse" />
           B2B Procurement Intelligence Platform
         </div>
         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-foreground leading-tight">
           Menangkan Tender LPSE{' '}
-          <span className="bg-gradient-to-r from-orange-500 via-orange-400 to-sky-500 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-teal-500 via-teal-400 to-cyan-500 bg-clip-text text-transparent">
             Lebih Cepat dengan AI
           </span>
         </h1>
@@ -96,13 +96,13 @@ export default function LandingPage() {
         <div className="flex items-center justify-center gap-4 pt-2">
           <Link
             href="/register"
-            className="px-8 py-3 text-sm font-semibold rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-200 hover:shadow-xl hover:shadow-orange-300 hover:-translate-y-0.5 active:translate-y-0"
+            className="px-8 py-3 text-sm font-semibold rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg shadow-teal-200 hover:shadow-xl hover:shadow-teal-300 hover:-translate-y-0.5 active:translate-y-0"
           >
             Mulai Uji Coba Gratis
           </Link>
           <Link
             href="/login"
-            className="px-8 py-3 text-sm font-semibold rounded-xl bg-white hover:bg-orange-50 border border-border text-foreground transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
+            className="px-8 py-3 text-sm font-semibold rounded-xl bg-white hover:bg-teal-50 border border-border text-foreground transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
           >
             Masuk Dasbor
           </Link>
@@ -128,13 +128,13 @@ export default function LandingPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
-            { icon: '🤖', title: 'Gemini AI Summarization', desc: 'Dapatkan ringkasan spesifikasi teknis, sertifikasi industri wajib, kelayakan modal, dan tanggal krusial tanpa harus membaca ratusan halaman dokumen.', color: 'from-orange-50 to-orange-100/50', iconBg: 'bg-orange-100', iconColor: 'text-orange-600' },
+            { icon: '🤖', title: 'Gemini AI Summarization', desc: 'Dapatkan ringkasan spesifikasi teknis, sertifikasi industri wajib, kelayakan modal, dan tanggal krusial tanpa harus membaca ratusan halaman dokumen.', color: 'from-teal-50 to-teal-100/50', iconBg: 'bg-teal-100', iconColor: 'text-teal-600' },
             { icon: '⚡', title: 'Alert Instan Realtime', desc: 'Jalankan alarm monitor berbasis keyword. Dapatkan pesan instan secara otomatis ke grup koordinasi tim di Telegram dan kotak masuk email kantor.', color: 'from-sky-50 to-sky-100/50', iconBg: 'bg-sky-100', iconColor: 'text-sky-600' },
-            { icon: '📊', title: 'Scraper Diagnostics', desc: 'Uptime tracker yang transparan. Admin kami memantau crawler LPSE nasional setiap menit untuk menjamin tidak ada peluang pengadaan yang terlewat.', color: 'from-orange-50 to-sky-50', iconBg: 'bg-gradient-to-br from-orange-100 to-sky-100', iconColor: 'text-orange-600' },
+            { icon: '📊', title: 'Scraper Diagnostics', desc: 'Uptime tracker yang transparan. Admin kami memantau crawler LPSE nasional setiap menit untuk menjamin tidak ada peluang pengadaan yang terlewat.', color: 'from-teal-50 to-cyan-50', iconBg: 'bg-gradient-to-br from-teal-100 to-cyan-100', iconColor: 'text-teal-600' },
           ].map((feat, i) => (
             <div
               key={i}
-              className="group p-8 rounded-2xl border border-border bg-white hover:shadow-xl hover:shadow-orange-100/20 hover:border-orange-200 transition-all duration-300 hover:-translate-y-1 space-y-5"
+              className="group p-8 rounded-2xl border border-border bg-white hover:shadow-xl hover:shadow-teal-100/20 hover:border-teal-200 transition-all duration-300 hover:-translate-y-1 space-y-5"
             >
               <div className={`inline-flex h-12 w-12 rounded-xl ${feat.iconBg} items-center justify-center text-xl ${feat.iconColor} shadow-sm`}>
                 {feat.icon}
@@ -149,7 +149,7 @@ export default function LandingPage() {
       {/* Pricing section */}
       <section id="pricing" className="max-w-7xl mx-auto px-6 py-24 space-y-14">
         <div className="text-center space-y-3">
-          <span className="inline-block px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-[10px] font-semibold text-orange-600 uppercase tracking-wider">Harga</span>
+          <span className="inline-block px-3 py-1 rounded-full bg-teal-50 border border-teal-200 text-[10px] font-semibold text-teal-600 uppercase tracking-wider">Harga</span>
           <h2 className="text-3xl font-bold text-foreground">Investasi yang Mempercepat Growth Anda</h2>
           <p className="text-muted-foreground text-sm max-w-lg mx-auto">Pilih paket lisensi terbaik sesuai dengan skala perusahaan Anda.</p>
         </div>
@@ -216,12 +216,12 @@ export default function LandingPage() {
           </div>
 
           {/* Pro (Best Seller) */}
-          <div className="p-7 rounded-2xl border-2 border-orange-400 bg-gradient-to-b from-orange-50 to-white shadow-lg shadow-orange-100 flex flex-col justify-between space-y-5 relative overflow-hidden hover:shadow-xl hover:shadow-orange-200 hover:-translate-y-1 transition-all duration-300">
-            <div className="absolute top-0 right-0 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-[9px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-bl-xl shadow-sm">
+          <div className="p-7 rounded-2xl border-2 border-teal-400 bg-gradient-to-b from-teal-50 to-white shadow-lg shadow-teal-100 flex flex-col justify-between space-y-5 relative overflow-hidden hover:shadow-xl hover:shadow-teal-200 hover:-translate-y-1 transition-all duration-300">
+            <div className="absolute top-0 right-0 bg-gradient-to-r from-teal-500 to-teal-600 text-white text-[9px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-bl-xl shadow-sm">
               Best Seller
             </div>
             <div className="space-y-4">
-              <span className="text-[11px] font-semibold text-orange-600 uppercase tracking-widest block">Pro License</span>
+              <span className="text-[11px] font-semibold text-teal-600 uppercase tracking-widest block">Pro License</span>
               <div className="text-4xl font-extrabold text-foreground">Rp 109.000 <span className="text-sm font-normal text-muted-foreground">/ bln</span></div>
               <p className="text-sm text-muted-foreground">Terlaris untuk software house & vendor menengah.</p>
               <ul className="space-y-2.5 text-sm pt-2">
@@ -247,7 +247,7 @@ export default function LandingPage() {
                 </li>
               </ul>
             </div>
-            <Link href="/register" className="block text-center w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-md shadow-orange-200">
+            <Link href="/register" className="block text-center w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-md shadow-teal-200">
               Daftar Pro
             </Link>
           </div>
@@ -290,7 +290,7 @@ export default function LandingPage() {
 
       {/* Stats Bar */}
       <section className="max-w-5xl mx-auto px-6 pb-8">
-        <div className="grid grid-cols-3 rounded-2xl bg-gradient-to-r from-orange-500 to-sky-500 p-8 shadow-xl shadow-orange-200/30 text-white">
+        <div className="grid grid-cols-3 rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 p-8 shadow-xl shadow-teal-200/30 text-white">
           {[
             { value: '10K+', label: 'Tender Dipantau' },
             { value: '500+', label: 'Pengguna Aktif' },
@@ -334,14 +334,14 @@ export default function LandingPage() {
 
       {/* CTA Section */}
       <section className="max-w-3xl mx-auto px-6 pb-24 text-center space-y-8">
-        <div className="rounded-3xl bg-gradient-to-br from-orange-500 via-orange-600 to-sky-600 p-12 shadow-2xl shadow-orange-200/40 text-white space-y-6">
+        <div className="rounded-3xl bg-gradient-to-br from-teal-500 via-teal-600 to-cyan-600 p-12 shadow-2xl shadow-teal-200/40 text-white space-y-6">
           <h2 className="text-4xl font-extrabold">Siap Memenangkan Tender LPSE?</h2>
           <p className="text-white/80 text-base max-w-lg mx-auto">
             Bergabung dengan tim pengadaan terdepan di Indonesia. Mulai pantau, analisis, dan menangkan tender lebih cepat.
           </p>
           <Link
             href="/register"
-            className="inline-block px-10 py-3.5 text-sm font-bold rounded-xl bg-white text-orange-600 hover:bg-orange-50 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0"
+            className="inline-block px-10 py-3.5 text-sm font-bold rounded-xl bg-white text-teal-600 hover:bg-teal-50 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0"
           >
             Mulai Uji Coba Gratis Sekarang
           </Link>
@@ -356,15 +356,15 @@ export default function LandingPage() {
             Punya pertanyaan atau butuh bantuan? Tim kami siap membantu Anda.
           </p>
           <div className="flex items-center justify-center gap-8 pt-2 flex-wrap">
-            <a href="mailto:hello@sinyaltender.id" className="group flex items-center gap-2 text-sm text-muted-foreground hover:text-orange-600 transition-colors">
+            <a href="mailto:hello@sinyaltender.id" className="group flex items-center gap-2 text-sm text-muted-foreground hover:text-teal-600 transition-colors">
               <span className="text-base">✉️</span>
               hello@sinyaltender.id
             </a>
-            <a href="#" className="group flex items-center gap-2 text-sm text-muted-foreground hover:text-orange-600 transition-colors">
+            <a href="#" className="group flex items-center gap-2 text-sm text-muted-foreground hover:text-teal-600 transition-colors">
               <span className="text-base">📞</span>
               +62 21 1234 5678
             </a>
-            <a href="#" className="group flex items-center gap-2 text-sm text-muted-foreground hover:text-orange-600 transition-colors">
+            <a href="#" className="group flex items-center gap-2 text-sm text-muted-foreground hover:text-teal-600 transition-colors">
               <span className="text-base">💬</span>
               Telegram Support
             </a>

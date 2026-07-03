@@ -54,7 +54,7 @@ export default function CompetitorPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-extrabold tracking-tight text-white gradient-text">Analisis Kompetitor</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight gradient-text">Analisis Kompetitor</h1>
         <p className="text-muted-foreground text-sm">Pantau histori kemenangan kompetitor di setiap instansi untuk strategi bidding yang lebih cerdas.</p>
       </div>
 
@@ -66,11 +66,11 @@ export default function CompetitorPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-5 rounded-xl border border-border bg-card">
             <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Total Kompetitor</span>
-            <div className="text-2xl font-bold font-mono text-white mt-2">{data.totalCompetitors}</div>
+            <div className="text-2xl font-bold font-mono text-foreground mt-2">{data.totalCompetitors}</div>
           </div>
           <div className="p-5 rounded-xl border border-border bg-card">
             <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Total Tender Dimenangkan</span>
-            <div className="text-2xl font-bold font-mono text-white mt-2">{data.totalTendersWon}</div>
+            <div className="text-2xl font-bold font-mono text-foreground mt-2">{data.totalTendersWon}</div>
           </div>
         </div>
       )}
@@ -78,7 +78,7 @@ export default function CompetitorPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 rounded-xl border border-border bg-card overflow-hidden">
           <div className="p-4 border-b border-border bg-maroon-darker/30">
-            <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Daftar Kompetitor</h3>
+            <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Daftar Kompetitor</h3>
           </div>
           {data?.competitors?.length > 0 ? (
             <table className="w-full text-left">
@@ -97,8 +97,8 @@ export default function CompetitorPage() {
                     <td className="p-3 font-mono">{c.totalWon}</td>
                     <td className="p-3 font-mono text-emerald-400">{formatCurrency(c.totalPagu)}</td>
                     <td className="p-3 text-right">
-                      <button onClick={() => openDetail(c.agency)}
-                        className="text-[10px] text-muted-foreground hover:text-white transition-colors">
+                        <button onClick={() => openDetail(c.agency)}
+                          className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">
                         Detail →
                       </button>
                     </td>
@@ -113,7 +113,7 @@ export default function CompetitorPage() {
 
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           <div className="p-4 border-b border-border bg-maroon-darker/30">
-            <h3 className="text-xs font-semibold text-white uppercase tracking-wider">
+            <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
               {selectedAgency || 'Detail Instansi'}
             </h3>
           </div>
@@ -126,7 +126,7 @@ export default function CompetitorPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <span className="text-[10px] text-muted-foreground block">Total Menang</span>
-                  <span className="font-mono font-bold text-white">{detail.totalWon}</span>
+                    <span className="font-mono font-bold text-foreground">{detail.totalWon}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-muted-foreground block">Total Pagu</span>

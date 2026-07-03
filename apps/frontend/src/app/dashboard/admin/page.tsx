@@ -40,6 +40,12 @@ export default function AdminPage() {
   const [modal, setModal] = useState<{ type: 'tenant' | 'user'; mode: 'create' | 'edit'; data?: any } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'tenant' | 'user'; id: string; name: string } | null>(null);
 
+  // Search state
+  const [tenantSearch, setTenantSearch] = useState('');
+  const [userSearch, setUserSearch] = useState('');
+  const [lpseSearch, setLpseSearch] = useState('');
+  const [selectedLpseIds, setSelectedLpseIds] = useState<Set<string>>(new Set());
+
   // Form state
   const [form, setForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
@@ -52,6 +58,10 @@ export default function AdminPage() {
     }
     loadData();
   }, [user, router]);
+
+  useEffect(() => {
+    setSelectedLpseIds(new Set());
+  }, [tab]);
 
   const loadData = () => {
     setLoading(true);
@@ -127,6 +137,59 @@ export default function AdminPage() {
     }
   };
 
+  const filteredTenants = tenants.filter((t) =>
+    t.name.toLowerCase().includes(tenantSearch.toLowerCase()) ||
+    t.slug.toLowerCase().includes(tenantSearch.toLowerCase())
+  );
+
+  const filteredUsers = users.filter((u) => {
+    const member = u.tenantMembers?.[0];
+    const q = userSearch.toLowerCase();
+    return (
+      (u.name || '').toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q) ||
+      (member?.tenant?.name || '').toLowerCase().includes(q)
+    );
+  });
+
+  const filteredLpse = lpseSources.filter((s: any) => {
+    const q = lpseSearch.toLowerCase();
+    return (
+      s.name.toLowerCase().includes(q) ||
+      (s.apiSlug || '').toLowerCase().includes(q) ||
+      (s.location || '').toLowerCase().includes(q)
+    );
+  });
+
+  const toggleLpseSelect = (id: string) => {
+    setSelectedLpseIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleLpseSelectAll = () => {
+    if (selectedLpseIds.size === filteredLpse.length) {
+      setSelectedLpseIds(new Set());
+    } else {
+      setSelectedLpseIds(new Set(filteredLpse.map((s: any) => s.id)));
+    }
+  };
+
+  const handleBatchToggle = async (activate: boolean) => {
+    for (const id of selectedLpseIds) {
+      try {
+        await apiFetch(`/admin/lpse-sources/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ isActive: activate }),
+        });
+      } catch {}
+    }
+    setSelectedLpseIds(new Set());
+    loadData();
+  };
+
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setSaving(true);
@@ -157,7 +220,7 @@ export default function AdminPage() {
     const styles: Record<string, string> = {
       SUPERADMIN: 'bg-purple-950 text-purple-300 border border-purple-800',
       ADMIN: 'bg-blue-950 text-blue-300 border border-blue-800',
-      USER: 'bg-maroon-darker text-foreground',
+      USER: 'bg-maroon-darker text-white',
     };
     return (
       <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold ${styles[role] || styles.USER}`}>
@@ -170,7 +233,7 @@ export default function AdminPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-extrabold tracking-tight text-white gradient-text">
+          <h1 className="text-3xl font-extrabold tracking-tight gradient-text">
             Admin Panel
           </h1>
           <p className="text-muted-foreground text-sm">
@@ -220,10 +283,19 @@ export default function AdminPage() {
       {tab === 'tenants' && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs text-muted-foreground">{tenants.length} tenant</span>
-            <button onClick={() => openCreate('tenant')} className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-maroon hover:bg-maroon-dark text-white transition-colors">
-              + Tambah Tenant
-            </button>
+            <span className="text-xs text-muted-foreground">{tenantSearch ? `${filteredTenants.length} dari ${tenants.length} tenant` : `${tenants.length} tenant`}</span>
+            <div className="flex items-center gap-3">
+              <input
+                type="text"
+                placeholder="Cari tenant..."
+                value={tenantSearch}
+                onChange={(e) => setTenantSearch(e.target.value)}
+                className="w-48 bg-input border border-border rounded-lg px-3 py-1.5 text-xs text-foreground placeholder-muted-foreground focus:outline-none focus:border-ring"
+              />
+              <button onClick={() => openCreate('tenant')} className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-maroon hover:bg-maroon-dark text-white transition-colors">
+                + Tambah Tenant
+              </button>
+            </div>
           </div>
           <div className="rounded-xl border border-border bg-card overflow-hidden">
             <table className="w-full text-left">
@@ -240,7 +312,10 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border text-xs text-foreground">
-                {tenants.map((t) => (
+                {filteredTenants.length === 0 ? (
+                  <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">Tenant tidak ditemukan.</td></tr>
+                ) : (
+                filteredTenants.map((t) => (
                   <tr key={t.id} className="hover:bg-maroon-darker/30">
                     <td className="p-4 font-medium">{t.name}</td>
                     <td className="p-4 font-mono text-muted-foreground">{t.slug}</td>
@@ -262,7 +337,7 @@ export default function AdminPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           </div>
@@ -273,10 +348,19 @@ export default function AdminPage() {
       {tab === 'users' && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs text-muted-foreground">{users.length} user</span>
-            <button onClick={() => openCreate('user')} className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-maroon hover:bg-maroon-dark text-white transition-colors">
-              + Tambah User
-            </button>
+            <span className="text-xs text-muted-foreground">{userSearch ? `${filteredUsers.length} dari ${users.length} user` : `${users.length} user`}</span>
+            <div className="flex items-center gap-3">
+              <input
+                type="text"
+                placeholder="Cari user..."
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                className="w-48 bg-input border border-border rounded-lg px-3 py-1.5 text-xs text-foreground placeholder-muted-foreground focus:outline-none focus:border-ring"
+              />
+              <button onClick={() => openCreate('user')} className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-maroon hover:bg-maroon-dark text-white transition-colors">
+                + Tambah User
+              </button>
+            </div>
           </div>
           <div className="rounded-xl border border-border bg-card overflow-hidden">
             <table className="w-full text-left">
@@ -291,7 +375,10 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border text-xs text-foreground">
-                {users.map((u) => {
+                {filteredUsers.length === 0 ? (
+                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">User tidak ditemukan.</td></tr>
+                ) : (
+                filteredUsers.map((u) => {
                   const member = u.tenantMembers?.[0];
                   return (
                     <tr key={u.id} className="hover:bg-maroon-darker/30">
@@ -308,7 +395,7 @@ export default function AdminPage() {
                       </td>
                     </tr>
                   );
-                })}
+                }))}
               </tbody>
             </table>
           </div>
@@ -320,9 +407,32 @@ export default function AdminPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <span className="text-xs text-muted-foreground">
-              {lpseSources.filter((s: any) => s.isActive).length} aktif dari {lpseSources.length} total
+              {lpseSearch ? `${filteredLpse.length} dari ${lpseSources.length} source` : `${lpseSources.filter((s: any) => s.isActive).length} aktif dari ${lpseSources.length} total`}
             </span>
             <div className="flex items-center gap-2">
+              <input
+                type="text"
+                placeholder="Cari crawler..."
+                value={lpseSearch}
+                onChange={(e) => setLpseSearch(e.target.value)}
+                className="w-48 bg-input border border-border rounded-lg px-3 py-1.5 text-xs text-foreground placeholder-muted-foreground focus:outline-none focus:border-ring"
+              />
+              {selectedLpseIds.size > 0 && (
+                <>
+                  <button
+                    onClick={() => handleBatchToggle(true)}
+                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white transition-colors"
+                  >
+                    Aktifkan ({selectedLpseIds.size})
+                  </button>
+                  <button
+                    onClick={() => handleBatchToggle(false)}
+                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-700 hover:bg-red-600 text-white transition-colors"
+                  >
+                    Nonaktifkan ({selectedLpseIds.size})
+                  </button>
+                </>
+              )}
               <button
                 onClick={async () => {
                   setDiscovering(true);
@@ -349,6 +459,14 @@ export default function AdminPage() {
               <table className="w-full text-left">
                 <thead className="sticky top-0 bg-card">
                   <tr className="border-b border-border text-xs text-muted-foreground uppercase font-semibold">
+                    <th className="p-4 w-10">
+                      <input
+                        type="checkbox"
+                        checked={filteredLpse.length > 0 && selectedLpseIds.size === filteredLpse.length}
+                        onChange={toggleLpseSelectAll}
+                        className="rounded accent-primary"
+                      />
+                    </th>
                     <th className="p-4">Nama</th>
                     <th className="p-4">Slug</th>
                     <th className="p-4">Lokasi</th>
@@ -358,8 +476,23 @@ export default function AdminPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border text-xs text-foreground">
-                  {lpseSources.map((s: any) => (
-                    <tr key={s.id} className="hover:bg-maroon-darker/30">
+                  {filteredLpse.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                        {lpseSources.length === 0 ? 'Belum ada LPSE source. Klik "Discover LPSE" untuk mencari dari direktori eproc.lkpp.go.id.' : 'Crawler tidak ditemukan.'}
+                      </td>
+                    </tr>
+                  ) : (
+                  filteredLpse.map((s: any) => (
+                    <tr key={s.id} className={`hover:bg-maroon-darker/30 ${selectedLpseIds.has(s.id) ? 'bg-maroon-darker/20' : ''}`}>
+                      <td className="p-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedLpseIds.has(s.id)}
+                          onChange={() => toggleLpseSelect(s.id)}
+                          className="rounded accent-primary"
+                        />
+                      </td>
                       <td className="p-4 font-medium">{s.name}</td>
                       <td className="p-4 font-mono text-muted-foreground">{s.apiSlug}</td>
                       <td className="p-4 text-muted-foreground">{s.location || '-'}</td>
@@ -396,14 +529,7 @@ export default function AdminPage() {
                         </button>
                       </td>
                     </tr>
-                  ))}
-                  {lpseSources.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="p-8 text-center text-muted-foreground">
-                        Belum ada LPSE source. Klik &quot;Discover LPSE&quot; untuk mencari dari direktori eproc.lkpp.go.id.
-                      </td>
-                    </tr>
-                  )}
+                  )))}
                 </tbody>
               </table>
             </div>
@@ -476,7 +602,7 @@ export default function AdminPage() {
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button onClick={closeModal} className="flex-1 px-4 py-2 bg-maroon-darker hover:bg-maroon-dark border border-border text-muted-foreground text-xs font-semibold rounded-lg transition-colors">Batal</button>
+              <button onClick={closeModal} className="flex-1 px-4 py-2 bg-maroon-darker hover:bg-maroon-dark border border-border text-white text-xs font-semibold rounded-lg transition-colors">Batal</button>
               <button onClick={handleSave} disabled={saving} className="flex-1 px-4 py-2 bg-maroon hover:bg-maroon-dark text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                 {saving && <span className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                 {modal.mode === 'create' ? 'Simpan' : 'Perbarui'}
@@ -500,7 +626,7 @@ export default function AdminPage() {
             </div>
             {formError && <div className="p-3 rounded-lg bg-red-950 border border-destructive text-xs text-red-300">{formError}</div>}
             <div className="flex gap-3">
-              <button onClick={closeModal} className="flex-1 px-4 py-2 bg-maroon-darker hover:bg-maroon-dark border border-border text-muted-foreground text-xs font-semibold rounded-lg transition-colors">Batal</button>
+              <button onClick={closeModal} className="flex-1 px-4 py-2 bg-maroon-darker hover:bg-maroon-dark border border-border text-white text-xs font-semibold rounded-lg transition-colors">Batal</button>
               <button onClick={handleDelete} disabled={saving} className="flex-1 px-4 py-2 bg-red-800 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                 {saving && <span className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                 Hapus

@@ -116,14 +116,14 @@ export default function SettingsPage() {
   return (
     <div className="space-y-8 max-w-2xl">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-extrabold tracking-tight text-white gradient-text">Account Settings</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight gradient-text">Account Settings</h1>
         <p className="text-muted-foreground text-sm">Kelola profil akun, email, dan keamanan Anda.</p>
       </div>
 
       {/* Profile Section */}
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="p-4 border-b border-border bg-maroon-darker/30">
-          <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Profil</h3>
+          <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Profil</h3>
         </div>
         <form onSubmit={handleSaveProfile} className="p-6 space-y-4">
           <div>
@@ -152,7 +152,7 @@ export default function SettingsPage() {
       {/* Email Section */}
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="p-4 border-b border-border bg-maroon-darker/30">
-          <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Ganti Email</h3>
+          <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Ganti Email</h3>
         </div>
         <div className="p-6 space-y-4">
           <div>
@@ -194,7 +194,7 @@ export default function SettingsPage() {
       {/* Password Section */}
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="p-4 border-b border-border bg-maroon-darker/30">
-          <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Ganti Password</h3>
+          <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Ganti Password</h3>
         </div>
         <form onSubmit={handleChangePassword} className="p-6 space-y-4">
           <div>

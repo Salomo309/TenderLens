@@ -87,7 +87,7 @@ export default function AlertsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-extrabold tracking-tight text-white gradient-text">Pemberitahuan Kata Kunci</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight gradient-text">Pemberitahuan Kata Kunci</h1>
         <p className="text-muted-foreground text-sm">Dapatkan notifikasi instan melalui Telegram dan Email saat tender LPSE baru cocok dengan kata kunci Anda.</p>
       </div>
 
@@ -97,7 +97,7 @@ export default function AlertsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <form onSubmit={handleAddAlert} className="p-6 rounded-xl border border-border bg-card space-y-4 h-fit">
-          <h3 className="text-sm font-semibold text-white">Buat Pemantauan Baru</h3>
+          <h3 className="text-sm font-semibold text-foreground">Buat Pemantauan Baru</h3>
           <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1.5">Kata Kunci (Keyword)</label>
             <input type="text" placeholder="Contoh: Cisco, Kubernetes, Asphalt" value={keyword}
@@ -109,7 +109,7 @@ export default function AlertsPage() {
             <div className="flex gap-4">
               {channelOptions.map((ch) => (
                 <label key={ch.value} className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
-                  <input type="checkbox" checked={channels.includes(ch.value)} onChange={() => handleChannelToggle(ch.value)} className="rounded accent-maroon" />
+                  <input type="checkbox" checked={channels.includes(ch.value)} onChange={() => handleChannelToggle(ch.value)} className="rounded accent-primary" />
                   {ch.label}
                 </label>
               ))}
@@ -133,7 +133,7 @@ export default function AlertsPage() {
                 <p className="text-[10px] text-emerald-500 mt-1">Terhubung ke akun Telegram Anda</p>
               )}
               {!telegramConnected && (
-                <a href="/dashboard/telegram" className="text-[10px] text-muted-foreground hover:text-white mt-1 inline-block">
+                <a href="/dashboard/telegram" className="text-[10px] text-muted-foreground hover:text-foreground mt-1 inline-block">
                   Belum punya Chat ID? Hubungkan Telegram dulu →
                 </a>
               )}
@@ -148,7 +148,7 @@ export default function AlertsPage() {
         <div className="lg:col-span-2 space-y-4">
           <div className="rounded-xl border border-border bg-card overflow-hidden">
             <div className="p-4 border-b border-border bg-maroon-darker/30">
-              <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Keyword Aktif Terdaftar</h3>
+              <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Keyword Aktif Terdaftar</h3>
             </div>
             {loading ? (
               <div className="p-12 text-center text-muted-foreground">
@@ -177,7 +177,7 @@ export default function AlertsPage() {
                         <td className="p-4">
                           <div className="flex gap-2">
                             {alert.channels?.map((ch: string) => (
-                              <span key={ch} className="px-1.5 py-0.5 rounded bg-maroon-darker text-foreground text-[10px] font-mono">{ch}</span>
+                              <span key={ch} className="px-1.5 py-0.5 rounded bg-maroon-darker text-white text-[10px] font-mono">{ch}</span>
                             ))}
                           </div>
                         </td>

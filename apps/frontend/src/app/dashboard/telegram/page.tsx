@@ -87,7 +87,7 @@ export default function TelegramPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-extrabold tracking-tight text-white gradient-text">Telegram Settings</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight gradient-text">Telegram Settings</h1>
         <p className="text-muted-foreground text-sm">Hubungkan akun Telegram Anda untuk menerima notifikasi tender.</p>
       </div>
 
@@ -95,7 +95,7 @@ export default function TelegramPage() {
         <div className={`p-4 rounded-xl border text-xs ${
           msgType === 'success' ? 'border-emerald-800 bg-emerald-950/50 text-emerald-300' :
           msgType === 'error' ? 'border-red-800 bg-red-950/50 text-red-300' :
-          'border-border bg-maroon-darker/50 text-foreground'
+          'border-border bg-maroon-darker/50 text-white'
         }`}>
           {msg}
         </div>
@@ -109,7 +109,7 @@ export default function TelegramPage() {
               <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Status Koneksi</span>
               <div className="flex items-center gap-2">
                 <div className={`h-2 w-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-muted'}`} />
-                <span className="text-sm font-medium text-white">
+                <span className="text-sm font-medium text-foreground">
                   {connected ? 'Terhubung' : 'Belum Terhubung'}
                 </span>
               </div>
@@ -128,10 +128,10 @@ export default function TelegramPage() {
           <div className="space-y-3">
             <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Langkah-langkah:</h4>
             <ol className="space-y-2 text-xs text-foreground list-decimal list-inside">
-              <li>Buka Telegram dan cari <strong className="text-white">@{botUsername}</strong></li>
-              <li>Klik <strong className="text-white">Start</strong> atau kirim pesan <code className="px-1 py-0.5 bg-maroon-darker rounded text-[10px] font-mono">/start</code></li>
-              <li>Bot akan membalas dengan <strong className="text-white">Chat ID</strong> Anda (angka, misal: <code className="px-1 py-0.5 bg-maroon-darker rounded text-[10px] font-mono">123456789</code>)</li>
-              <li>Salin Chat ID tersebut dan tempel di kolom bawah, lalu klik <strong className="text-white">Hubungkan</strong></li>
+              <li>Buka Telegram dan cari <strong className="text-foreground">@{botUsername}</strong></li>
+              <li>Klik <strong className="text-foreground">Start</strong> atau kirim pesan <code className="px-1 py-0.5 bg-maroon-darker rounded text-[10px] font-mono">/start</code></li>
+              <li>Bot akan membalas dengan <strong className="text-foreground">Chat ID</strong> Anda (angka, misal: <code className="px-1 py-0.5 bg-maroon-darker rounded text-[10px] font-mono">123456789</code>)</li>
+              <li>Salin Chat ID tersebut dan tempel di kolom bawah, lalu klik <strong className="text-foreground">Hubungkan</strong></li>
             </ol>
           </div>
 
@@ -146,7 +146,7 @@ export default function TelegramPage() {
                 value={inputChatId}
                 onChange={(e) => setInputChatId(e.target.value)}
                 placeholder="123456789 atau @username"
-                className="flex-1 px-4 py-2 bg-background border border-border rounded-lg text-xs text-white placeholder-muted-foreground focus:outline-none focus:border-neutral-600 transition-colors"
+                className="flex-1 px-4 py-2 bg-background border border-border rounded-lg text-xs text-foreground placeholder-muted-foreground focus:outline-none focus:border-neutral-600 transition-colors"
               />
               {connected ? (
                 <button
