@@ -377,7 +377,7 @@ export class ScraperService {
 
   private async fetchTenders(source: LpseSource): Promise<TenderParseResult[]> {
     try {
-      const { token, cookies } = await this.fetchSession(source);
+      const { token, cookies, userAgent } = await this.fetchSession(source);
       if (!token) {
         this.logger.warn(`[${source.slug}] Could not get authenticity token`);
         return [];
@@ -388,7 +388,7 @@ export class ScraperService {
       const pageSize = 200;
 
       while (true) {
-        const page = await this.fetchTendersPage(source, token, cookies, start, pageSize);
+        const page = await this.fetchTendersPage(source, token, cookies, userAgent, start, pageSize);
         if (page.length === 0) break;
 
         allTenders.push(...page);
@@ -415,7 +415,7 @@ export class ScraperService {
     }
   }
 
-  private async fetchSession(source: LpseSource): Promise<{ token: string; cookies: string }> {
+  private async fetchSession(source: LpseSource): Promise<{ token: string; cookies: string; userAgent: string }> {
     const pageUrl = `${source.baseUrl}/lelang`;
     try {
       const res = await axios.get(pageUrl, {
@@ -432,20 +432,22 @@ export class ScraperService {
         const token = this.extractToken(res.data);
         const cookies = (res.headers['set-cookie'] || []).map((c: string) => c.split(';')[0]).join('; ');
         if (token) {
-          return { token, cookies };
+          return { token, cookies, userAgent: '' };
         }
       }
     } catch (err) {
-      this.logger.warn(`[${source.slug}] axios fetchSession failed (${(err as any)?.response?.status || (err as any)?.message}), trying puppeteer...`);
+      this.logger.warn(`[${source.slug}] axios fetchSession failed (${(err as any)?.response?.status || (err as any)?.message})`);
     }
 
     let html: string;
     let cookieList: string[];
+    let userAgent = '';
     try {
       this.logger.log(`[${source.slug}] Trying Flaresolverr...`);
       const result = await this.flaresolverrService.fetchSession(pageUrl);
       html = result.html;
       cookieList = result.cookies;
+      userAgent = result.userAgent;
     } catch (fsErr) {
       this.logger.warn(`[${source.slug}] Flaresolverr failed (${(fsErr as Error).message}), trying puppeteer...`);
       const result = await this.puppeteerService.fetchSession(pageUrl);
@@ -457,7 +459,7 @@ export class ScraperService {
     if (!token) {
       this.logger.warn(`[${source.slug}] Could not get authenticityToken from any method`);
     }
-    return { token, cookies };
+    return { token, cookies, userAgent };
   }
 
   private extractToken(html: string): string {
@@ -474,31 +476,45 @@ export class ScraperService {
     source: LpseSource,
     token: string,
     cookies: string,
+    userAgent: string,
     start: number,
     length = 200,
   ): Promise<TenderParseResult[]> {
     const apiUrl = `${source.baseUrl}/dt/lelang?tahun=${new Date().getFullYear()}`;
-    const body = new URLSearchParams({
+    const formData: Record<string, string> = {
       authenticityToken: token,
       draw: '1',
       start: String(start),
       length: String(length),
-    }).toString();
+    };
 
-    const res = await axios.post(apiUrl, body, {
-      timeout: 15000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': 'application/json',
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'X-Requested-With': 'XMLHttpRequest',
-        'Cookie': cookies,
-        'Referer': `${source.baseUrl}/lelang`,
-      },
-    });
+    if (userAgent) {
+      try {
+        const body = new URLSearchParams(formData).toString();
+        const res = await axios.post(apiUrl, body, {
+          timeout: 15000,
+          headers: {
+            'User-Agent': userAgent,
+            'Accept': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Cookie': cookies,
+            'Referer': `${source.baseUrl}/lelang`,
+          },
+        });
 
-    const data = res.data;
-    const rawRows: any[][] = data.data || [];
+        const responseData = res.data;
+        const rawRows: any[][] = responseData.data || [];
+        return rawRows.map((row) => this.parseApiRow(row, source));
+      } catch (err) {
+        this.logger.warn(`[${source.slug}] Direct POST failed, trying via Flaresolverr...`);
+      }
+    }
+
+    const cookieList = cookies ? cookies.split('; ').filter(Boolean) : [];
+    const result = await this.flaresolverrService.postWithSession(apiUrl, formData, cookieList, userAgent);
+    const responseData = JSON.parse(result.html);
+    const rawRows: any[][] = responseData.data || [];
     return rawRows.map((row) => this.parseApiRow(row, source));
   }
 
