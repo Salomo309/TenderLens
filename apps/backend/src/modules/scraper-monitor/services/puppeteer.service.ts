@@ -4,8 +4,7 @@ import type { Browser, Page, HTTPResponse } from 'puppeteer';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const puppeteerExtra = require('puppeteer-extra');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const stealthPlugin = require('puppeteer-extra-plugin-stealth');
-const StealthPlugin = stealthPlugin.default || stealthPlugin;
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 
 try {
   puppeteerExtra.use(StealthPlugin());
