@@ -32,49 +32,44 @@ export class SubscriptionHelper {
     }
   }
 
-  async checkAiSummaryLimit(tenantId: string): Promise<void> {
+  async checkAndIncrementAiSummary(tenantId: string): Promise<void> {
     const { plan } = await this.getPlan(tenantId);
     if (plan.maxAiSummariesPerMonth >= 9999) return; // unlimited tier
 
     const now = new Date();
-    let sub = await this.prisma.subscription.findUnique({ where: { tenantId } });
-    let used = sub?.monthlyAiSummaryUsed || 0;
-
-    // Reset counter if a month has passed
-    if (sub?.monthlyAiSummaryResetAt && sub.monthlyAiSummaryResetAt < now) {
-      await this.prisma.subscription.update({
-        where: { tenantId },
-        data: { monthlyAiSummaryUsed: 0, monthlyAiSummaryResetAt: null },
-      });
-      used = 0;
-    }
-
-    if (used >= plan.maxAiSummariesPerMonth) {
-      throw new ForbiddenException(
-        `Batas AI Summary bulanan (${plan.maxAiSummariesPerMonth}) tercapai. Upgrade paket untuk kuota lebih besar.`
-      );
-    }
-  }
-
-  async incrementAiSummaryUsed(tenantId: string): Promise<void> {
-    const now = new Date();
     const resetAt = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-    // Upsert: create subscription record for FREE_TRIAL if it doesn't exist
-    await this.prisma.subscription.upsert({
-      where: { tenantId },
-      create: {
-        tenantId,
-        tier: 'FREE_TRIAL',
-        status: 'ACTIVE',
-        expiresAt: resetAt,
-        monthlyAiSummaryUsed: 1,
-        monthlyAiSummaryResetAt: resetAt,
-      },
-      update: {
-        monthlyAiSummaryUsed: { increment: 1 },
-        monthlyAiSummaryResetAt: resetAt,
-      },
+    // Atomic: check + increment dalam satu transaksi — cegah race condition
+    await this.prisma.$transaction(async (tx) => {
+      const sub = await tx.subscription.findUnique({ where: { tenantId } });
+      let used = sub?.monthlyAiSummaryUsed || 0;
+
+      // Reset counter jika sudah lewat sebulan
+      if (sub?.monthlyAiSummaryResetAt && sub.monthlyAiSummaryResetAt < now) {
+        used = 0;
+      }
+
+      if (used >= plan.maxAiSummariesPerMonth) {
+        throw new ForbiddenException(
+          `Batas AI Summary bulanan (${plan.maxAiSummariesPerMonth}) tercapai. Upgrade paket untuk kuota lebih besar.`
+        );
+      }
+
+      await tx.subscription.upsert({
+        where: { tenantId },
+        create: {
+          tenantId,
+          tier: 'FREE_TRIAL',
+          status: 'ACTIVE',
+          expiresAt: resetAt,
+          monthlyAiSummaryUsed: 1,
+          monthlyAiSummaryResetAt: resetAt,
+        },
+        update: {
+          monthlyAiSummaryUsed: { increment: 1 },
+          monthlyAiSummaryResetAt: resetAt,
+        },
+      });
     });
   }
 }

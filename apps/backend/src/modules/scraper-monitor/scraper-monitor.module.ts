@@ -7,5 +7,6 @@ import { NotificationsModule } from '../notifications/notifications.module';
   imports: [NotificationsModule],
   controllers: [ScraperMonitorController],
   providers: [ScraperService],
+  exports: [ScraperService],
 })
 export class ScraperMonitorModule {}

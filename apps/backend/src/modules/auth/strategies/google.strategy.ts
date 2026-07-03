@@ -42,25 +42,31 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
 
       if (!user) {
         const slug = `google-${email.split('@')[0]}-${Date.now().toString(36)}`;
-        const tenant = await this.prisma.tenant.create({
-          data: { name: `${displayName}'s Company`, slug },
+        const result = await this.prisma.$transaction(async (tx) => {
+          const tenant = await tx.tenant.create({
+            data: { name: `${displayName}'s Company`, slug },
+          });
+
+          const newUser = await tx.user.create({
+            data: {
+              email,
+              name: displayName,
+              avatarUrl: photos?.[0]?.value || null,
+            },
+          });
+
+          await tx.tenantMember.create({
+            data: {
+              tenantId: tenant.id,
+              userId: newUser.id,
+              role: 'USER',
+            },
+          });
+
+          return { tenant, user: newUser };
         });
 
-        user = await this.prisma.user.create({
-          data: {
-            email,
-            name: displayName,
-            avatarUrl: photos?.[0]?.value || null,
-          },
-        });
-
-        await this.prisma.tenantMember.create({
-          data: {
-            tenantId: tenant.id,
-            userId: user.id,
-            role: 'USER',
-          },
-        });
+        user = result.user;
       }
 
       const member = await this.prisma.tenantMember.findFirst({

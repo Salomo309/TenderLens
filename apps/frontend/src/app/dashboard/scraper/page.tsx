@@ -1,15 +1,25 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
 import { apiFetch } from '@/lib/api';
 
 export default function ScraperMonitorPage() {
+  const { user } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (user && user.role !== 'SUPERADMIN' && user.role !== 'ADMIN') {
+      router.replace('/dashboard');
+    }
+  }, [user, router]);
+
   const [health, setHealth] = useState<any>(null);
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [triggering, setTriggering] = useState(false);
-  const [seeding, setSeeding] = useState(false);
   const [actionMsg, setActionMsg] = useState('');
 
   const fetchData = useCallback(async () => {
@@ -40,19 +50,6 @@ export default function ScraperMonitorPage() {
       setActionMsg('Gagal memicu scraping: ' + e.message);
     }
     setTriggering(false);
-  };
-
-  const handleSeedData = async () => {
-    setSeeding(true);
-    setActionMsg('');
-    try {
-      const res = await apiFetch('/scraper-monitor/seed', { method: 'POST' });
-      setActionMsg(res.message);
-      await fetchData();
-    } catch (e: any) {
-      setActionMsg('Gagal menyemai data seed: ' + e.message);
-    }
-    setSeeding(false);
   };
 
   if (loading) return (
@@ -86,13 +83,6 @@ export default function ScraperMonitorPage() {
         >
           {triggering ? <span className="h-4 w-4 border-2 border-border border-t-transparent rounded-full animate-spin" /> : '📡 Scrape LPSE Sekarang'}
         </button>
-        <button
-          onClick={handleSeedData}
-          disabled={seeding}
-          className="px-4 py-2 bg-maroon-darker hover:bg-maroon-dark border border-border text-foreground text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
-        >
-          {seeding ? <span className="h-4 w-4 border-2 border-neutral-400 border-t-transparent rounded-full animate-spin" /> : '🌱 Semai Data Mock (Seed)'}
-        </button>
       </div>
 
       {health && (
@@ -101,10 +91,10 @@ export default function ScraperMonitorPage() {
             <div key={crawler.crawlerName} className="p-5 rounded-xl border border-border bg-card flex flex-col justify-between">
               <div className="space-y-1">
                 <span className="text-[10px] font-semibold text-muted-foreground font-mono">CRAWLER AGENT</span>
-                <h3 className="text-sm font-bold text-white truncate">{crawler.crawlerName}</h3>
+                <h3 className="text-sm font-bold text-foreground truncate">{crawler.crawlerName}</h3>
               </div>
               <div className="my-4 flex items-baseline justify-between">
-                <span className="text-2xl font-bold font-mono tracking-tight text-white">{crawler.uptime}%</span>
+                <span className="text-2xl font-bold font-mono tracking-tight text-foreground">{crawler.uptime}%</span>
                 <span className="text-xs text-muted-foreground">Uptime</span>
               </div>
               <div className="border-t border-border pt-3 space-y-1 text-[11px] text-muted-foreground">
@@ -131,8 +121,8 @@ export default function ScraperMonitorPage() {
 
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="p-4 border-b border-border bg-maroon-darker/30 flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Scraper Execution Logs</h3>
-          <button onClick={fetchData} className="text-xs text-muted-foreground hover:text-white transition-colors">↻ Refresh</button>
+          <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Scraper Execution Logs</h3>
+          <button onClick={fetchData} className="text-xs text-muted-foreground hover:text-foreground transition-colors">↻ Refresh</button>
         </div>
         <table className="w-full text-left">
           <thead>

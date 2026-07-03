@@ -3,6 +3,15 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SubscriptionTier, SubscriptionStatus } from '@prisma/client';
 import * as crypto from 'crypto';
 
+function parseTier(tierStr: string): SubscriptionTier {
+  const upper = tierStr.toUpperCase();
+  if (upper === 'FREE_TRIAL') return SubscriptionTier.FREE_TRIAL;
+  if (upper === 'STARTER') return SubscriptionTier.STARTER;
+  if (upper === 'PRO') return SubscriptionTier.PRO;
+  if (upper === 'ENTERPRISE') return SubscriptionTier.ENTERPRISE;
+  return SubscriptionTier.PRO;
+}
+
 export interface MidtransNotificationDto {
   transaction_time: string;
   transaction_status: string;
@@ -27,10 +36,8 @@ export class BillingService {
    * Validate webhook request payload using Midtrans HMAC SHA512 signature key specs
    */
   validateSignature(dto: MidtransNotificationDto): boolean {
-    const isProduction = process.env.MIDTRANS_IS_PRODUCTION === 'true';
-
-    if (!this.serverKey || !isProduction) {
-      this.logger.warn('Sandbox mode — skipping webhook signature validation.');
+    if (!this.serverKey) {
+      this.logger.warn('MIDTRANS_SERVER_KEY not set — skipping webhook signature validation.');
       return true;
     }
 
@@ -152,6 +159,7 @@ export class BillingService {
     const invoice = await this.prisma.invoice.create({
       data: {
         tenantId,
+        tier: parseTier(tier),
         amount,
         status: 'PENDING',
         midtransOrderId: orderId,
@@ -209,11 +217,8 @@ export class BillingService {
       const expirationDate = new Date();
       expirationDate.setDate(expirationDate.getDate() + 30); // 30-day license active
 
-      // Determine tier from amount (stored in invoice)
-      let targetTier: SubscriptionTier = SubscriptionTier.PRO;
-      const amt = Number(invoice.amount);
-      if (amt === 59000) targetTier = SubscriptionTier.STARTER;
-      else if (amt === 300000) targetTier = SubscriptionTier.ENTERPRISE;
+      // Baca tier langsung dari invoice (bukan dari nominal)
+      const targetTier = invoice.tier;
 
       await this.prisma.subscription.upsert({
         where: { tenantId: invoice.tenantId },

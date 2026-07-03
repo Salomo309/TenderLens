@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post, Patch, UseGuards, Req, Res } from '@nestjs
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
+import { RegisterVerifyDto } from './dto/register-verify.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser, JwtPayload } from './decorators/current-user.decorator';
@@ -20,6 +21,18 @@ export class AuthController {
   @Post('register')
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
+  }
+
+  @ApiOperation({ summary: 'Verify email with code after registration' })
+  @Post('register/verify')
+  registerVerify(@Body() dto: RegisterVerifyDto) {
+    return this.authService.registerVerify(dto);
+  }
+
+  @ApiOperation({ summary: 'Resend verification code' })
+  @Post('register/resend-code')
+  resendCode(@Body('userId') userId: string) {
+    return this.authService.resendVerificationCode(userId);
   }
 
   @ApiOperation({ summary: 'Login with email and password' })

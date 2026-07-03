@@ -23,7 +23,9 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (data: { companyName: string; adminName: string; email: string; password: string }) => Promise<void>;
+  register: (data: { companyName: string; adminName: string; email: string; password: string }) => Promise<{ userId: string; email: string; tenantId: string }>;
+  registerVerify: (userId: string, code: string) => Promise<void>;
+  resendCode: (userId: string) => Promise<void>;
   logout: () => void;
   getToken: () => string | null;
 }
@@ -87,7 +89,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (data: { companyName: string; adminName: string; email: string; password: string }) => {
     const res = await authApi().register(data);
+    return { userId: res.userId, email: res.email, tenantId: res.tenantId };
+  };
+
+  const registerVerify = async (userId: string, code: string) => {
+    const res = await authApi().registerVerify({ userId, code });
     handleAuthResponse(res);
+  };
+
+  const resendCode = async (userId: string) => {
+    await authApi().resendVerificationCode(userId);
   };
 
   const logout = () => {
@@ -100,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, tenant, token, isLoading, login, register, logout, getToken }}>
+    <AuthContext.Provider value={{ user, tenant, token, isLoading, login, register, registerVerify, resendCode, logout, getToken }}>
       {children}
     </AuthContext.Provider>
   );

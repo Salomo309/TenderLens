@@ -47,8 +47,16 @@ export async function apiFetch<T = any>(
 
 export interface AuthResponse {
   access_token: string;
-  user: { id: string; email: string; name: string | null };
+  user: { id: string; email: string; name: string | null; role: string };
   tenant: { id: string; name: string; slug: string };
+}
+
+export interface RegisterResponse {
+  message: string;
+  userId: string;
+  email: string;
+  tenantId: string;
+  expiresInMinutes: number;
 }
 
 export interface MeResponse {
@@ -65,9 +73,21 @@ export function authApi() {
       }),
 
     register: (data: { companyName: string; adminName: string; email: string; password: string }) =>
-      apiFetch<AuthResponse>('/auth/register', {
+      apiFetch<RegisterResponse>('/auth/register', {
         method: 'POST',
         body: JSON.stringify(data),
+      }),
+
+    registerVerify: (data: { userId: string; code: string }) =>
+      apiFetch<AuthResponse>('/auth/register/verify', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+
+    resendVerificationCode: (userId: string) =>
+      apiFetch<{ message: string }>('/auth/register/resend-code', {
+        method: 'POST',
+        body: JSON.stringify({ userId }),
       }),
 
     me: () => apiFetch<MeResponse>('/auth/me'),

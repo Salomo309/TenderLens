@@ -23,13 +23,6 @@ export class ScraperMonitorController {
     return { message: `Scrape cycle completed. ${total} tenders processed.`, total };
   }
 
-  @ApiOperation({ summary: 'Seed sample tender data for development/testing' })
-  @Post('seed')
-  async triggerSeed() {
-    const total = await this.scraperService.seedData();
-    return { message: `Seeded ${total} sample tenders successfully.`, total };
-  }
-
   @ApiOperation({ summary: 'Get scraper execution logs' })
   @Get('logs')
   async getLogs(
@@ -57,20 +50,20 @@ export class ScraperMonitorController {
   @ApiOperation({ summary: 'Get scraper health and uptime for all crawlers' })
   @Get('health')
   async getUptimeHealth() {
-    const activeCrawlers = [
-      'LPSE_KEMEN_KEU',
-      'LPSE_KEMEN_PUPR',
-      'LPSE_DKI_JAKARTA',
-      'LPSE_JAWA_BARAT',
-      'LPSE_SURABAYA',
-    ];
+    const sources = await this.prisma.lpseSource.findMany({
+      select: { slug: true, name: true, isActive: true },
+    });
+
+    const crawlerNames = sources.map((s) => s.slug);
+
+    const sourceMap = new Map(sources.map((s) => [s.slug, s.isActive]));
 
     const healthReports = await Promise.all(
-      activeCrawlers.map(async (crawler) => {
+      crawlerNames.map(async (slug) => {
         const logs = await this.prisma.scraperLog.findMany({
-          where: { crawlerName: crawler },
+          where: { crawlerName: slug },
           orderBy: { startedAt: 'desc' },
-          take: 30, // Evaluate past 30 runs
+          take: 30,
         });
 
         const totalRuns = logs.length;
@@ -81,7 +74,7 @@ export class ScraperMonitorController {
         const totalItemsCrawled = logs.reduce((sum, item) => sum + item.itemsCrawled, 0);
 
         return {
-          crawlerName: crawler,
+          crawlerName: slug,
           uptime: uptime !== null ? parseFloat(uptime.toFixed(2)) : null,
           totalRuns,
           successRuns,
@@ -89,9 +82,26 @@ export class ScraperMonitorController {
           totalItemsCrawled,
           lastActive: logs[0]?.startedAt || null,
           currentStatus: logs[0]?.status || 'OFFLINE',
+          isActive: sourceMap.get(slug) ?? false,
         };
       })
     );
+
+    // Urutkan: active di atas, lalu sisanya
+    healthReports.sort((a, b) => {
+      if (a.isActive === b.isActive) return 0;
+      return a.isActive ? -1 : 1;
+    });
+
+    // Alert SUPERADMIN jika ada crawler dengan uptime di bawah 60%
+    const criticalCrawlers = healthReports.filter(
+      (r) => r.uptime !== null && r.uptime < 60 && r.totalRuns >= 5
+    );
+    if (criticalCrawlers.length > 0) {
+      this.scraperService.alertCrawlerFailures(criticalCrawlers).catch((err) =>
+        console.error('Failed to alert crawler failures:', err)
+      );
+    }
 
     return {
       status: 'OPERATIONAL',

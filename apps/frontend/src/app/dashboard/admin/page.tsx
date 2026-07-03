@@ -188,7 +188,7 @@ export default function AdminPage() {
             className={`px-4 py-1.5 text-xs font-medium rounded-md transition-colors ${
               tab === t.key
                 ? 'bg-maroon-darker text-white'
-                : 'text-muted-foreground hover:text-white'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             {t.label}
@@ -210,7 +210,7 @@ export default function AdminPage() {
                 <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{item.label}</span>
                 <span className="text-lg">{item.icon}</span>
               </div>
-              <div className="text-2xl font-bold text-white font-mono">{item.value}</div>
+              <div className="text-2xl font-bold text-foreground font-mono">{item.value}</div>
             </div>
           ))}
         </div>
@@ -257,7 +257,7 @@ export default function AdminPage() {
                     <td className="p-4 text-muted-foreground font-mono">{new Date(t.createdAt).toLocaleDateString('id-ID')}</td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
-                        <button onClick={() => openEdit('tenant', t)} className="text-muted-foreground hover:text-white text-xs underline">Edit</button>
+                        <button onClick={() => openEdit('tenant', t)} className="text-muted-foreground hover:text-foreground text-xs underline">Edit</button>
                         <button onClick={() => setDeleteTarget({ type: 'tenant', id: t.id, name: t.name })} className="text-red-400 hover:text-red-300 text-xs underline">Hapus</button>
                       </div>
                     </td>
@@ -302,7 +302,7 @@ export default function AdminPage() {
                       <td className="p-4 text-muted-foreground font-mono">{new Date(u.createdAt).toLocaleDateString('id-ID')}</td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
-                          <button onClick={() => openEdit('user', u)} className="text-muted-foreground hover:text-white text-xs underline">Edit</button>
+                          <button onClick={() => openEdit('user', u)} className="text-muted-foreground hover:text-foreground text-xs underline">Edit</button>
                           <button onClick={() => setDeleteTarget({ type: 'user', id: u.id, name: u.email })} className="text-red-400 hover:text-red-300 text-xs underline">Hapus</button>
                         </div>
                       </td>
@@ -416,10 +416,10 @@ export default function AdminPage() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={closeModal}>
           <div className="w-full max-w-md bg-card border border-border rounded-2xl p-6 space-y-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white">
+              <h3 className="text-lg font-bold text-foreground">
                 {modal.mode === 'create' ? 'Tambah' : 'Edit'} {modal.type === 'tenant' ? 'Tenant' : 'User'}
               </h3>
-              <button onClick={closeModal} className="text-muted-foreground hover:text-white text-lg font-bold">✕</button>
+              <button onClick={closeModal} className="text-muted-foreground hover:text-foreground text-lg font-bold">✕</button>
             </div>
 
             {formError && (
@@ -492,9 +492,9 @@ export default function AdminPage() {
           <div className="w-full max-w-sm bg-card border border-border rounded-2xl p-6 space-y-5" onClick={(e) => e.stopPropagation()}>
             <div className="text-center space-y-2">
               <div className="text-3xl">⚠️</div>
-              <h3 className="text-lg font-bold text-white">Hapus {deleteTarget.type === 'tenant' ? 'Tenant' : 'User'}</h3>
+              <h3 className="text-lg font-bold text-foreground">Hapus {deleteTarget.type === 'tenant' ? 'Tenant' : 'User'}</h3>
               <p className="text-xs text-muted-foreground">
-                Yakin ingin menghapus <strong className="text-white">{deleteTarget.name}</strong>?
+                Yakin ingin menghapus <strong className="text-foreground">{deleteTarget.name}</strong>?
                 {deleteTarget.type === 'tenant' && ' Semua data terkait (member, tender tersimpan, alert, invoice) akan ikut terhapus.'}
               </p>
             </div>

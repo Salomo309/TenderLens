@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
+import { RegisterVerifyDto } from './dto/register-verify.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtPayload } from './decorators/current-user.decorator';
 
@@ -25,6 +26,9 @@ export class AuthService {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '') + '-' + Date.now().toString(36);
 
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
     const result = await this.prisma.$transaction(async (tx) => {
       const tenant = await tx.tenant.create({
         data: { name: dto.companyName, slug },
@@ -35,6 +39,8 @@ export class AuthService {
           email: dto.email,
           name: dto.adminName,
           passwordHash,
+          emailVerificationCode: code,
+          emailVerificationExpiresAt: expiresAt,
         },
       });
 
@@ -49,27 +55,134 @@ export class AuthService {
       return { tenant, user, member };
     });
 
-    const payload: JwtPayload = {
-      sub: result.user.id,
+    // Kirim email verifikasi via Resend
+    await this.sendVerificationEmail(result.user.email, code);
+
+    return {
+      message: 'Akun berhasil dibuat. Silakan cek email untuk kode verifikasi.',
+      userId: result.user.id,
       email: result.user.email,
       tenantId: result.tenant.id,
-      role: result.member.role,
+      expiresInMinutes: 15,
+    };
+  }
+
+  async registerVerify(dto: RegisterVerifyDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: dto.userId } });
+    if (!user) {
+      throw new BadRequestException('User tidak ditemukan.');
+    }
+
+    if (user.emailVerified) {
+      throw new BadRequestException('Email sudah diverifikasi.');
+    }
+
+    if (!user.emailVerificationCode || !user.emailVerificationExpiresAt) {
+      throw new BadRequestException('Tidak ada kode verifikasi. Silakan daftar ulang.');
+    }
+
+    if (user.emailVerificationExpiresAt < new Date()) {
+      throw new BadRequestException('Kode verifikasi sudah kedaluwarsa. Silakan daftar ulang.');
+    }
+
+    if (user.emailVerificationCode !== dto.code.toUpperCase()) {
+      throw new BadRequestException('Kode verifikasi salah.');
+    }
+
+    const member = await this.prisma.tenantMember.findFirst({
+      where: { userId: user.id },
+      include: { tenant: true },
+    });
+    if (!member) {
+      throw new BadRequestException('User tidak memiliki tenant.');
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        emailVerificationCode: null,
+        emailVerificationExpiresAt: null,
+      },
+    });
+
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      tenantId: member.tenantId,
+      role: member.role,
     };
 
     return {
       access_token: this.jwtService.sign(payload),
       user: {
-        id: result.user.id,
-        email: result.user.email,
-        name: result.user.name,
-        avatarUrl: result.user.avatarUrl,
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatarUrl: user.avatarUrl,
+        role: member.role,
       },
       tenant: {
-        id: result.tenant.id,
-        name: result.tenant.name,
-        slug: result.tenant.slug,
+        id: member.tenant.id,
+        name: member.tenant.name,
+        slug: member.tenant.slug,
       },
     };
+  }
+
+  async resendVerificationCode(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new BadRequestException('User tidak ditemukan.');
+    }
+    if (user.emailVerified) {
+      throw new BadRequestException('Email sudah diverifikasi.');
+    }
+
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        emailVerificationCode: code,
+        emailVerificationExpiresAt: expiresAt,
+      },
+    });
+
+    await this.sendVerificationEmail(user.email, code);
+    return { message: 'Kode verifikasi telah dikirim ulang.', expiresInMinutes: 15 };
+  }
+
+  private async sendVerificationEmail(to: string, code: string) {
+    const resendKey = process.env.RESEND_API_KEY;
+    const mailFrom = process.env.MAIL_FROM || 'no-reply@sinyaltender.id';
+
+    if (!resendKey) {
+      Logger.warn(`RESEND_API_KEY not set. Dev mode — verification code for ${to}: ${code}`);
+      return;
+    }
+
+    try {
+      const resp = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${resendKey}`,
+        },
+        body: JSON.stringify({
+          from: mailFrom,
+          to,
+          subject: '[SinyalTender] Verifikasi Email Anda',
+          text: `Terima kasih telah mendaftar di SinyalTender!\n\nGunakan kode berikut untuk memverifikasi email Anda:\n\n${code}\n\nKode berlaku 15 menit.\n\nJika Anda tidak mendaftar, abaikan email ini.`,
+        }),
+      });
+      if (!resp.ok) {
+        Logger.warn(`Resend responded with ${resp.status}: ${await resp.text()}`);
+      }
+    } catch (err) {
+      Logger.warn(`Failed to send verification email: ${err}`);
+    }
   }
 
   async login(dto: LoginDto) {
@@ -84,6 +197,10 @@ export class AuthService {
 
     if (!user || !user.passwordHash) {
       throw new UnauthorizedException('Email atau kata sandi salah.');
+    }
+
+    if (!user.emailVerified) {
+      throw new UnauthorizedException('Email belum diverifikasi. Silakan cek email Anda untuk kode verifikasi.');
     }
 
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
@@ -110,6 +227,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         avatarUrl: user.avatarUrl,
+        role: primaryMember.role,
       },
       tenant: {
         id: primaryMember.tenant.id,

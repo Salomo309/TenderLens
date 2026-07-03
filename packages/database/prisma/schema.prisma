@@ -44,6 +44,7 @@ model User {
   name                    String?
   avatarUrl               String?
   pendingEmail            String?
+  emailVerified           Boolean        @default(false)
   emailVerificationCode   String?
   emailVerificationExpiresAt DateTime?
   createdAt               DateTime       @default(now())
@@ -102,18 +103,19 @@ model Subscription {
 }
 
 model Invoice {
-  id              String         @id @default(uuid())
+  id              String             @id @default(uuid())
   tenantId        String
-  amount          Decimal        @db.Decimal(12, 2)
-  status          String         // e.g. "PENDING", "PAID", "EXPIRED", "FAILED"
-  midtransOrderId String         @unique
+  tier            SubscriptionTier   @default(PRO) // Tier yang dibeli (bukan dari nominal)
+  amount          Decimal            @db.Decimal(12, 2)
+  status          String             // e.g. "PENDING", "PAID", "EXPIRED", "FAILED"
+  midtransOrderId String             @unique
   midtransSnapToken String?
   paidAt          DateTime?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
 
   // Relations
-  tenant          Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant          Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }
 
 // ==========================================
@@ -210,6 +212,7 @@ model LpseSource {
   location    String?
   isActive    Boolean      @default(false)
   lastScraped DateTime?
+  priority    Int          @default(2) // 1=high (10min), 2=medium (30min), 3=low (2h)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 }

@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 
 export default function LandingPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   return (
     <div className="min-h-screen bg-background text-foreground antialiased selection:bg-orange-200 selection:text-orange-900">
       {/* Decorative background blobs */}
@@ -13,11 +14,12 @@ export default function LandingPage() {
       </div>
 
       {/* Header bar */}
-      <header className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between border-b border-border bg-white/70 backdrop-blur-xl sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <img src="/logo-title-transparent.png" alt="SinyalTender" className="h-28 w-auto" />
+      <header className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between border-b border-border bg-white/70 backdrop-blur-xl sticky top-0 z-50">
+        <div className="flex items-center gap-3 shrink-0">
+          <img src="/logo-title-transparent.png" alt="SinyalTender" className="h-16 sm:h-20 md:h-28 w-auto" />
         </div>
-        <nav className="flex items-center gap-8">
+        {/* Desktop nav */}
+        <nav className="hidden md:flex items-center gap-6 lg:gap-8">
           <Link href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Fitur
           </Link>
@@ -37,7 +39,42 @@ export default function LandingPage() {
             Masuk Platform
           </Link>
         </nav>
+        {/* Mobile hamburger */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="md:hidden text-muted-foreground hover:text-foreground text-xl p-1"
+          aria-label="Toggle menu"
+        >
+          {mobileMenuOpen ? '✕' : '☰'}
+        </button>
       </header>
+      {/* Mobile nav drawer */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          <div className="fixed inset-0 bg-black/40" onClick={() => setMobileMenuOpen(false)} />
+          <nav className="fixed top-16 right-0 w-64 bg-white border-l border-b border-border shadow-xl rounded-bl-2xl p-6 flex flex-col gap-4 animate-in slide-in-from-right">
+            <Link href="#features" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Fitur
+            </Link>
+            <Link href="#pricing" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Harga
+            </Link>
+            <Link href="#faq" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              FAQ
+            </Link>
+            <Link href="#contact" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Kontak
+            </Link>
+            <Link
+              href="/login"
+              onClick={() => setMobileMenuOpen(false)}
+              className="mt-2 text-center px-5 py-2 text-xs font-semibold rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-200 transition-colors"
+            >
+              Masuk Platform
+            </Link>
+          </nav>
+        </div>
+      )}
 
       {/* Hero section */}
       <section className="relative max-w-6xl mx-auto px-6 pt-28 pb-20 text-center space-y-8">

@@ -180,6 +180,23 @@ _Dikirim otomatis oleh SinyalTender Platform_
     }
   }
 
+  async logWebDashboard(payload: AlertDispatchPayload): Promise<boolean> {
+    const { tenantId, alertId, tenderTitle, tenderPagu } = payload;
+    await this.logNotification({
+      tenantId,
+      alertId,
+      channel: NotificationChannel.WEB_DASHBOARD,
+      recipient: tenantId,
+      message: `Tender baru: ${tenderTitle} (Rp ${tenderPagu})`,
+      status: 'SENT',
+    });
+    this.notificationsGateway.sendAlert(tenantId, {
+      title: 'Tender Baru Terdeteksi',
+      message: `${tenderTitle} - Pagu Rp ${tenderPagu}`,
+    });
+    return true;
+  }
+
   /**
    * Helper logs function for system audits
    */

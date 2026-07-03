@@ -55,7 +55,7 @@ export default function LoginPage() {
         {/* Brand header */}
         <div className="flex flex-col items-center space-y-2">
           <Link href="/" className="flex items-center gap-2">
-            <img src="/logo-title-transparent.png" alt="SinyalTender" className="h-28 w-auto" />
+            <img src="/logo-title-transparent.png" alt="SinyalTender" className="h-20 sm:h-28 w-auto" />
           </Link>
           <h2 className="text-xl font-bold text-foreground pt-2">Masuk ke Akun Anda</h2>
           <p className="text-xs text-muted-foreground text-center">

@@ -11,7 +11,6 @@ const navItems = [
   { href: '/dashboard/tenders', segment: 'tenders', label: '💼 LPSE Tenders' },
   { href: '/dashboard/alerts', segment: 'alerts', label: '🔔 Keyword Alerts' },
   { href: '/dashboard/telegram', segment: 'telegram', label: '✈️ Telegram' },
-  { href: '/dashboard/scraper', segment: 'scraper', label: '📡 Scraper Health' },
   { href: '/dashboard/competitor', segment: 'competitor', label: '🏆 Kompetitor' },
   { href: '/dashboard/billing', segment: 'billing', label: '💳 Billing Portal' },
   { href: '/dashboard/settings', segment: 'settings', label: '⚙️ Settings' },
@@ -24,6 +23,7 @@ export default function DashboardLayout({
 }) {
   const segment = useSelectedLayoutSegment();
   const { user, tenant, logout } = useAuth();
+  const isAdmin = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN';
   const isSuperadmin = user?.role === 'SUPERADMIN';
   const [platformStatus, setPlatformStatus] = useState<string | null>(null);
   const [lastSync, setLastSync] = useState<string | null>(null);
@@ -37,9 +37,13 @@ export default function DashboardLayout({
       .catch(() => setPlatformStatus('UNKNOWN'));
   }, []);
 
-  const filteredNav = isSuperadmin
-    ? [...navItems, { href: '/dashboard/admin', segment: 'admin', label: '🛡️ Admin Panel' }]
-    : navItems;
+  const adminItems = [
+    { href: '/dashboard/scraper', segment: 'scraper', label: '📡 Scraper Health' },
+  ];
+  if (isSuperadmin) {
+    adminItems.push({ href: '/dashboard/admin', segment: 'admin', label: '🛡️ Admin Panel' });
+  }
+  const filteredNav = isAdmin ? [...navItems, ...adminItems] : navItems;
 
   const getLinkClass = (item: typeof navItems[0]) => {
     const baseClass = "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors";

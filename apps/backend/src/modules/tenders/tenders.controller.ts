@@ -89,9 +89,8 @@ export class TendersController {
     @Param('id') id: string,
     @CurrentUser() user: JwtPayload,
   ) {
-    await this.subscriptionHelper.checkAiSummaryLimit(user.tenantId);
+    await this.subscriptionHelper.checkAndIncrementAiSummary(user.tenantId);
     const result = await this.tendersService.generateAiSummary(id);
-    await this.subscriptionHelper.incrementAiSummaryUsed(user.tenantId);
     return result;
   }
 
