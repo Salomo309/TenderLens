@@ -8,7 +8,19 @@ export class FlaresolverrService {
   private sessionId: string | null = null;
 
   async fetchSession(url: string): Promise<{ html: string; cookies: string[]; userAgent: string }> {
+    // Destroy previous session to get fresh data
+    await this.destroySession();
     return this.requestGet(url);
+  }
+
+  private async destroySession(): Promise<void> {
+    if (!this.sessionId) return;
+    try {
+      await axios.post(this.baseUrl, { cmd: 'sessions.destroy', session: this.sessionId }, { timeout: 5000 });
+    } catch {
+      // ignore destroy errors
+    }
+    this.sessionId = null;
   }
 
   async getSession(url: string): Promise<{ cookies: string[]; userAgent: string }> {
@@ -42,6 +54,7 @@ export class FlaresolverrService {
         url,
         session: sessionId,
         maxTimeout: 60000,
+        waitInSeconds: 8,
       },
       { timeout: 70000 },
     );

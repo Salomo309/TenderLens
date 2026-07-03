@@ -448,7 +448,10 @@ export class ScraperService {
 
   private parseHtmlTableRows(html: string): any[][] {
     const rows: any[][] = [];
-    const tbodyMatch = html.match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/i);
+    const tableMatch = html.match(/<table[^>]*id=["']tbllelang["'][^>]*>([\s\S]*?)<\/table>/i);
+    if (!tableMatch) return rows;
+
+    const tbodyMatch = tableMatch[1].match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/i);
     if (!tbodyMatch) return rows;
 
     const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
