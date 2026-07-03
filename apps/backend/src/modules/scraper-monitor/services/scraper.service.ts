@@ -5,6 +5,7 @@ import { Queue } from 'bull';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationService, AlertDispatchPayload } from '../../notifications/notification.service';
 import { PuppeteerService } from './puppeteer.service';
+import { FlaresolverrService } from './flaresolverr.service';
 import { TenderStage, TenderCategory, ScraperStatus, NotificationChannel } from '@prisma/client';
 import axios from 'axios';
 
@@ -37,6 +38,7 @@ export class ScraperService {
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
     private readonly puppeteerService: PuppeteerService,
+    private readonly flaresolverrService: FlaresolverrService,
     @Optional() @InjectQueue('scraping') private readonly scrapingQueue?: Queue,
     @Optional() @InjectQueue('notifications') private readonly notificationsQueue?: Queue,
   ) {}
@@ -437,12 +439,23 @@ export class ScraperService {
       this.logger.warn(`[${source.slug}] axios fetchSession failed (${(err as any)?.response?.status || (err as any)?.message}), trying puppeteer...`);
     }
 
-    this.logger.log(`[${source.slug}] Using puppeteer to fetch session...`);
-    const { html, cookies: cookieList } = await this.puppeteerService.fetchSession(pageUrl);
+    let html: string;
+    let cookieList: string[];
+    try {
+      this.logger.log(`[${source.slug}] Trying Flaresolverr...`);
+      const result = await this.flaresolverrService.fetchSession(pageUrl);
+      html = result.html;
+      cookieList = result.cookies;
+    } catch (fsErr) {
+      this.logger.warn(`[${source.slug}] Flaresolverr failed (${(fsErr as Error).message}), trying puppeteer...`);
+      const result = await this.puppeteerService.fetchSession(pageUrl);
+      html = result.html;
+      cookieList = result.cookies;
+    }
     const token = this.extractToken(html);
     const cookies = cookieList.join('; ');
     if (!token) {
-      this.logger.warn(`[${source.slug}] Could not get authenticityToken even with puppeteer`);
+      this.logger.warn(`[${source.slug}] Could not get authenticityToken from any method`);
     }
     return { token, cookies };
   }

@@ -1,7 +1,10 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import puppeteerExtra from 'puppeteer-extra';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import type { Browser, Page } from 'puppeteer';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const puppeteerExtra = require('puppeteer-extra');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 
 puppeteerExtra.use(StealthPlugin());
 
