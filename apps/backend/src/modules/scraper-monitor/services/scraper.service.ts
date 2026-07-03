@@ -377,10 +377,34 @@ export class ScraperService {
 
   private async fetchTenders(source: LpseSource): Promise<TenderParseResult[]> {
     try {
-      const pageUrl = `${source.baseUrl}/lelang`;
-      this.logger.log(`[${source.slug}] Fetching tenders via Puppeteer browser...`);
+      const slug = source.apiSlug || source.slug;
+      const pageUrl = `${source.baseUrl}/${slug}/lelang`;
+      const apiPath = `/${slug}/dt/lelang`;
 
-      const jsonTexts = await this.puppeteerService.scrapeTendersViaBrowser(pageUrl, 200, 5);
+      this.logger.log(`[${source.slug}] Fetching tenders via Puppeteer browser @ ${pageUrl}`);
+
+      // Step 1: Use Flaresolverr to bypass Cloudflare and get session cookies
+      this.logger.log(`[${source.slug}] Getting session cookies via Flaresolverr...`);
+      let flaresolverrCookies: { name: string; value: string }[] = [];
+      try {
+        const fsResult = await this.flaresolverrService.fetchSession(pageUrl);
+        flaresolverrCookies = fsResult.cookies.map((c) => {
+          const eqIdx = c.indexOf('=');
+          return { name: c.substring(0, eqIdx), value: c.substring(eqIdx + 1) };
+        });
+        this.logger.log(`[${source.slug}] Got ${flaresolverrCookies.length} cookies from Flaresolverr`);
+      } catch (fsErr) {
+        this.logger.warn(`[${source.slug}] Flaresolverr failed: ${(fsErr as Error).message}, trying without cookies`);
+      }
+
+      // Step 2: Use Puppeteer with the cookies to scrape DataTable
+      const jsonTexts = await this.puppeteerService.scrapeTendersViaBrowser(
+        pageUrl,
+        apiPath,
+        flaresolverrCookies,
+        200,
+        5,
+      );
 
       const allRows: any[][] = [];
       for (const jsonText of jsonTexts) {

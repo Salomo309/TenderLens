@@ -12,6 +12,11 @@ try {
   // stealth plugin failed to initialize, continuing without it
 }
 
+export interface CookieParam {
+  name: string;
+  value: string;
+}
+
 @Injectable()
 export class PuppeteerService implements OnModuleDestroy {
   private readonly logger = new Logger(PuppeteerService.name);
@@ -33,29 +38,31 @@ export class PuppeteerService implements OnModuleDestroy {
 
   async scrapeTendersViaBrowser(
     pageUrl: string,
+    apiPath: string,
+    cookies: CookieParam[],
     pageSize = 200,
     maxPages = 5,
   ): Promise<string[]> {
-    const page = await this.getPageForBrowserScrape();
+    const apiUrlPattern = new RegExp(apiPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+
+    const page = await this.getPageForBrowserScrape(cookies);
 
     const jsonResponses: string[] = [];
-    const apiUrlPattern = /\/dt\/lelang/;
+    page.on('response', async (response: HTTPResponse) => {
+      const req = response.request();
+      if (req.method() === 'POST' && apiUrlPattern.test(req.url())) {
+        try {
+          const text = await response.text();
+          if (text && text.startsWith('{')) {
+            jsonResponses.push(text);
+          }
+        } catch (e) {
+          // ignore response parsing errors
+        }
+      }
+    });
 
     try {
-      page.on('response', async (response: HTTPResponse) => {
-        const req = response.request();
-        if (req.method() === 'POST' && apiUrlPattern.test(req.url())) {
-          try {
-            const text = await response.text();
-            if (text && text.startsWith('{')) {
-              jsonResponses.push(text);
-            }
-          } catch (e) {
-            // ignore response parsing errors
-          }
-        }
-      });
-
       await page.goto(pageUrl, { waitUntil: 'networkidle0', timeout: 60000 });
 
       await this.waitForDataTable(page);
@@ -91,7 +98,7 @@ export class PuppeteerService implements OnModuleDestroy {
     await new Promise((r) => setTimeout(r, 500));
   }
 
-  private async getPageForBrowserScrape(): Promise<Page> {
+  private async getPageForBrowserScrape(cookies?: CookieParam[]): Promise<Page> {
     if (!this.browser) {
       this.logger.log('Launching headless browser...');
       this.browser = await puppeteerExtra.launch(this.getLaunchOptions());
@@ -105,6 +112,20 @@ export class PuppeteerService implements OnModuleDestroy {
     await page.setExtraHTTPHeaders({
       'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
     });
+
+    if (cookies && cookies.length > 0) {
+      const urlObj = new URL('https://spse.inaproc.id');
+      const puppeteerCookies = cookies.map((c) => ({
+        name: c.name,
+        value: c.value,
+        domain: urlObj.hostname,
+        path: '/',
+        httpOnly: false,
+        secure: true,
+      }));
+      await page.setCookie(...puppeteerCookies);
+    }
+
     return page;
   }
 
@@ -138,37 +159,6 @@ export class PuppeteerService implements OnModuleDestroy {
     await page.setExtraHTTPHeaders({
       'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
     });
-    return page;
-  }
-
-  private async getPageForAjax(
-    userAgent: string,
-    cookies: { name: string; value: string }[],
-  ): Promise<Page> {
-    if (!this.browser) {
-      this.logger.log('Launching headless browser...');
-      this.browser = await puppeteerExtra.launch(this.getLaunchOptions());
-      this.logger.log('Browser launched.');
-    }
-    const page = await this.browser.newPage();
-
-    if (userAgent) {
-      await page.setUserAgent(userAgent);
-    }
-
-    if (cookies.length > 0) {
-      const urlObj = new URL('https://spse.inaproc.id');
-      const cookieParams = cookies.map((c) => ({
-        name: c.name,
-        value: c.value,
-        domain: urlObj.hostname,
-        path: '/',
-        httpOnly: false,
-        secure: true,
-      }));
-      await page.setCookie(...cookieParams);
-    }
-
     return page;
   }
 
