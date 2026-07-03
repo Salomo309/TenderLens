@@ -377,9 +377,9 @@ export class ScraperService {
 
   private async fetchTenders(source: LpseSource): Promise<TenderParseResult[]> {
     try {
-      const slug = source.apiSlug || source.slug;
-      const pageUrl = `${source.baseUrl}/${slug}/lelang`;
-      const apiPath = `/${slug}/dt/lelang`;
+      const pageUrl = `${source.baseUrl}/lelang`;
+      const apiSlug = source.apiSlug || source.slug;
+      const apiPath = `/${apiSlug}/dt/lelang`;
 
       this.logger.log(`[${source.slug}] Fetching tenders via Puppeteer browser @ ${pageUrl}`);
 
