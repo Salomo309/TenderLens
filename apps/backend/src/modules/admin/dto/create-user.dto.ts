@@ -15,7 +15,7 @@ export class CreateUserDto {
   @IsString()
   tenantId: string;
 
-  @IsEnum(UserRole)
+  @IsEnum(() => UserRole)
   @IsOptional()
   role?: UserRole;
 }

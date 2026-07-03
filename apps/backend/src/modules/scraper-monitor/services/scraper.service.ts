@@ -4,6 +4,7 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationService, AlertDispatchPayload } from '../../notifications/notification.service';
+import { PuppeteerService } from './puppeteer.service';
 import { TenderStage, TenderCategory, ScraperStatus, NotificationChannel } from '@prisma/client';
 import axios from 'axios';
 
@@ -35,6 +36,7 @@ export class ScraperService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
+    private readonly puppeteerService: PuppeteerService,
     @Optional() @InjectQueue('scraping') private readonly scrapingQueue?: Queue,
     @Optional() @InjectQueue('notifications') private readonly notificationsQueue?: Queue,
   ) {}
@@ -413,34 +415,46 @@ export class ScraperService {
 
   private async fetchSession(source: LpseSource): Promise<{ token: string; cookies: string }> {
     const pageUrl = `${source.baseUrl}/lelang`;
-    const res = await axios.get(pageUrl, {
-      timeout: 15000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
-      },
-      maxRedirects: 5,
-    });
-    let token = '';
-    const jsMatch = res.data.match(/authenticityToken\s*=\s*['"](\S+?)['"]/);
-    if (jsMatch) {
-      token = jsMatch[1];
-    } else {
-      // Fallback: coba dari <meta name="csrf-token" content="...">
-      const metaMatch = res.data.match(/<meta\s+name=["']csrf-token["']\s+content=["'](\S+?)["']/i);
-      if (metaMatch) {
-        token = metaMatch[1];
-      } else {
-        // Fallback: coba dari <input type="hidden" name="authenticityToken" value="...">
-        const inputMatch = res.data.match(/<input[^>]+name=["']authenticityToken["'][^>]+value=["'](\S+?)["']/i);
-        if (inputMatch) {
-          token = inputMatch[1];
+    try {
+      const res = await axios.get(pageUrl, {
+        timeout: 15000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+        },
+        maxRedirects: 5,
+      });
+
+      if (res.status === 200) {
+        const token = this.extractToken(res.data);
+        const cookies = (res.headers['set-cookie'] || []).map((c: string) => c.split(';')[0]).join('; ');
+        if (token) {
+          return { token, cookies };
         }
       }
+    } catch (err) {
+      this.logger.warn(`[${source.slug}] axios fetchSession failed (${(err as any)?.response?.status || (err as any)?.message}), trying puppeteer...`);
     }
-    const cookies = (res.headers['set-cookie'] || []).map((c: string) => c.split(';')[0]).join('; ');
+
+    this.logger.log(`[${source.slug}] Using puppeteer to fetch session...`);
+    const { html, cookies: cookieList } = await this.puppeteerService.fetchSession(pageUrl);
+    const token = this.extractToken(html);
+    const cookies = cookieList.join('; ');
+    if (!token) {
+      this.logger.warn(`[${source.slug}] Could not get authenticityToken even with puppeteer`);
+    }
     return { token, cookies };
+  }
+
+  private extractToken(html: string): string {
+    const jsMatch = html.match(/authenticityToken\s*=\s*['"](\S+?)['"]/);
+    if (jsMatch) return jsMatch[1];
+    const metaMatch = html.match(/<meta\s+name=["']csrf-token["']\s+content=["'](\S+?)["']/i);
+    if (metaMatch) return metaMatch[1];
+    const inputMatch = html.match(/<input[^>]+name=["']authenticityToken["'][^>]+value=["'](\S+?)["']/i);
+    if (inputMatch) return inputMatch[1];
+    return '';
   }
 
   private async fetchTendersPage(
