@@ -113,6 +113,27 @@ export class PuppeteerService implements OnModuleDestroy {
       'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
     });
 
+    await page.evaluateOnNewDocument(() => {
+      // Remove webdriver property
+      Object.defineProperty(navigator, 'webdriver', { get: () => false });
+      // Override chrome property
+      (window as any).chrome = { runtime: {} };
+      // Override permissions
+      const originalQuery = window.navigator.permissions.query;
+      (window.navigator.permissions as any).query = (p: any) =>
+        p.name === 'notifications'
+          ? Promise.resolve({ state: 'denied' } as PermissionStatus)
+          : originalQuery(p);
+      // Override plugins
+      Object.defineProperty(navigator, 'plugins', {
+        get: () => [1, 2, 3, 4, 5] as any,
+      });
+      // Override languages
+      Object.defineProperty(navigator, 'languages', {
+        get: () => ['id-ID', 'id', 'en-US', 'en'],
+      });
+    });
+
     if (cookies && cookies.length > 0) {
       const urlObj = new URL('https://spse.inaproc.id');
       const puppeteerCookies = cookies.map((c) => ({
@@ -136,8 +157,18 @@ export class PuppeteerService implements OnModuleDestroy {
       '--disable-dev-shm-usage',
       '--disable-gpu',
       '--single-process',
+      '--disable-blink-features=AutomationControlled',
+      '--disable-web-security',
+      '--disable-features=IsolateOrigins,site-per-process',
+      '--disable-site-isolation-trials',
+      '--window-size=1366,768',
+      '--start-maximized',
     ];
-    const options: any = { headless: true, args };
+    const options: any = {
+      headless: 'new',
+      args,
+      ignoreHTTPSErrors: true,
+    };
     const systemChromium = '/usr/bin/chromium';
     const fs = require('fs');
     if (fs.existsSync(systemChromium)) {
