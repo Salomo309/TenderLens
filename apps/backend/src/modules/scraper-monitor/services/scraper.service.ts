@@ -511,8 +511,7 @@ export class ScraperService {
       }
     }
 
-    const cookieList = cookies ? cookies.split('; ').filter(Boolean) : [];
-    const result = await this.flaresolverrService.postWithSession(apiUrl, formData, cookieList, userAgent);
+    const result = await this.flaresolverrService.postWithSession(apiUrl, formData);
     const responseData = JSON.parse(result.html);
     const rawRows: any[][] = responseData.data || [];
     return rawRows.map((row) => this.parseApiRow(row, source));
