@@ -7,8 +7,6 @@ import { ScraperService } from './services/scraper.service';
 import axios from 'axios';
 
 @ApiTags('scraper')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('scraper-monitor')
 export class ScraperMonitorController {
   constructor(
