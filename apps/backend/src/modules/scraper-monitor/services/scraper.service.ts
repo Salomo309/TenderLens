@@ -377,40 +377,31 @@ export class ScraperService {
 
   private async fetchTenders(source: LpseSource): Promise<TenderParseResult[]> {
     try {
-      const { token, cookies, userAgent } = await this.fetchSession(source);
-      if (!token) {
-        this.logger.warn(`[${source.slug}] Could not get authenticity token`);
-        return [];
+      const pageUrl = `${source.baseUrl}/lelang`;
+      this.logger.log(`[${source.slug}] Fetching tenders via Puppeteer browser...`);
+
+      const jsonTexts = await this.puppeteerService.scrapeTendersViaBrowser(pageUrl, 200, 5);
+
+      const allRows: any[][] = [];
+      for (const jsonText of jsonTexts) {
+        try {
+          const data = JSON.parse(jsonText);
+          const rows: any[][] = data.data || [];
+          allRows.push(...rows);
+        } catch (e) {
+          this.logger.warn(`[${source.slug}] Failed to parse one JSON response`);
+        }
       }
 
-      const allTenders: TenderParseResult[] = [];
-      let start = 0;
-      const pageSize = 200;
+      const allTenders = allRows.map((row) => this.parseApiRow(row, source));
 
-      while (true) {
-        const page = await this.fetchTendersPage(source, token, cookies, userAgent, start, pageSize);
-        if (page.length === 0) break;
-
-        allTenders.push(...page);
-
-        if (page.length < pageSize) break;
-
-        // Incremental: stop jika semua tender di halaman ini sudah ada di DB
-        const lpseIds = page.map((t) => t.lpseId);
-        const existingCount = await this.prisma.tender.count({
-          where: { lpseId: { in: lpseIds } },
-        });
-        if (existingCount === lpseIds.length) {
-          this.logger.log(`[${source.slug}] All ${lpseIds.length} tenders in page already exist. Stopping pagination.`);
-          break;
-        }
-
-        start += pageSize;
+      if (allTenders.length === 0) {
+        this.logger.warn(`[${source.slug}] No tenders found via browser scrape`);
       }
 
       return allTenders;
     } catch (err: any) {
-      this.logger.error(`[${source.slug}] fetchTenders error: ${err.message}`);
+      this.logger.error(`[${source.slug}] fetchTenders via browser failed: ${err.message}`);
       return [];
     }
   }
@@ -480,70 +471,7 @@ export class ScraperService {
     start: number,
     length = 200,
   ): Promise<TenderParseResult[]> {
-    const apiUrl = `${source.baseUrl}/dt/lelang?tahun=${new Date().getFullYear()}`;
-    const pageUrl = `${source.baseUrl}/lelang`;
-    const formData: Record<string, string> = {
-      authenticityToken: token,
-      draw: '1',
-      start: String(start),
-      length: String(length),
-    };
-
-    if (userAgent) {
-      try {
-        const body = new URLSearchParams(formData).toString();
-        const res = await axios.post(apiUrl, body, {
-          timeout: 15000,
-          headers: {
-            'User-Agent': userAgent,
-            'Accept': 'application/json',
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-Requested-With': 'XMLHttpRequest',
-            'Cookie': cookies,
-            'Referer': pageUrl,
-          },
-        });
-
-        const responseData = res.data;
-        const rawRows: any[][] = responseData.data || [];
-        return rawRows.map((row) => this.parseApiRow(row, source));
-      } catch (err) {
-        this.logger.warn(`[${source.slug}] Direct POST failed, trying Puppeteer with fetch...`);
-      }
-    }
-
-    try {
-      this.logger.log(`[${source.slug}] Fetching via Puppeteer+fetch...`);
-      const cookieObjects = cookies
-        .split('; ')
-        .filter(Boolean)
-        .map((c) => {
-          const [name, ...rest] = c.split('=');
-          return { name, value: rest.join('=') };
-        });
-      const jsonText = await this.puppeteerService.fetchDataViaAjax(
-        pageUrl,
-        apiUrl,
-        formData,
-        cookieObjects,
-        userAgent,
-      );
-      const responseData = JSON.parse(jsonText);
-      const rawRows: any[][] = responseData.data || [];
-      return rawRows.map((row) => this.parseApiRow(row, source));
-    } catch (pupErr) {
-      this.logger.warn(`[${source.slug}] Puppeteer+fetch failed (${(pupErr as Error).message}), trying Flaresolverr...`);
-    }
-
-    try {
-      const result = await this.flaresolverrService.postWithSession(apiUrl, formData);
-      const responseData = JSON.parse(result.html);
-      const rawRows: any[][] = responseData.data || [];
-      return rawRows.map((row) => this.parseApiRow(row, source));
-    } catch (fsErr) {
-      this.logger.error(`[${source.slug}] All fetch methods failed: ${(fsErr as Error).message}`);
-      return [];
-    }
+    return [];
   }
 
   private parseApiRow(row: any[], source: LpseSource): TenderParseResult {

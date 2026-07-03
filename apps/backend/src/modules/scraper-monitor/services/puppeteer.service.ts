@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import type { Browser, Page } from 'puppeteer';
+import type { Browser, Page, HTTPResponse } from 'puppeteer';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const puppeteerExtra = require('puppeteer-extra');
@@ -32,36 +32,81 @@ export class PuppeteerService implements OnModuleDestroy {
     }
   }
 
-  async fetchDataViaAjax(
+  async scrapeTendersViaBrowser(
     pageUrl: string,
-    apiUrl: string,
-    formData: Record<string, string>,
-    cookies: { name: string; value: string }[],
-    userAgent: string,
-  ): Promise<string> {
-    const page = await this.getPageForAjax(userAgent, cookies);
+    pageSize = 200,
+    maxPages = 5,
+  ): Promise<string[]> {
+    const page = await this.getPageForBrowserScrape();
+
+    const jsonResponses: string[] = [];
+    const apiUrlPattern = /\/dt\/lelang/;
+
     try {
-      await page.goto(pageUrl, { waitUntil: 'networkidle0', timeout: 30000 });
+      page.on('response', async (response: HTTPResponse) => {
+        const req = response.request();
+        if (req.method() === 'POST' && apiUrlPattern.test(req.url())) {
+          try {
+            const text = await response.text();
+            if (text && text.startsWith('{')) {
+              jsonResponses.push(text);
+            }
+          } catch (e) {
+            // ignore response parsing errors
+          }
+        }
+      });
 
-      const result = await page.evaluate(async (params) => {
-        const formBody = new URLSearchParams(params.formData).toString();
-        const response = await fetch(params.apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Accept': 'application/json, text/plain, */*',
-            'X-Requested-With': 'XMLHttpRequest',
-            'Referer': params.pageUrl,
-          },
-          body: formBody,
+      await page.goto(pageUrl, { waitUntil: 'networkidle0', timeout: 60000 });
+
+      await this.waitForDataTable(page);
+
+      for (let i = 1; i < maxPages; i++) {
+        const hasNext = await page.evaluate(() => {
+          const btn = document.querySelector('#tbllelang_next a') as HTMLElement;
+          if (!btn || btn.classList.contains('disabled')) return false;
+          btn.click();
+          return true;
         });
-        return response.text();
-      }, { apiUrl, pageUrl, formData });
+        if (!hasNext) break;
+        await new Promise((r) => setTimeout(r, 2000));
+        await this.waitForDataTable(page);
+      }
 
-      return result;
+      return jsonResponses;
     } finally {
       await page.close().catch(() => {});
     }
+  }
+
+  private async waitForDataTable(page: Page): Promise<void> {
+    await page.waitForFunction(
+      () => {
+        const info = document.querySelector('#tbllelang_info');
+        if (!info) return false;
+        const text = info.textContent || '';
+        return !text.includes('Memuat') && !text.includes('Sedang proses');
+      },
+      { timeout: 30000 },
+    ).catch(() => {});
+    await new Promise((r) => setTimeout(r, 500));
+  }
+
+  private async getPageForBrowserScrape(): Promise<Page> {
+    if (!this.browser) {
+      this.logger.log('Launching headless browser...');
+      this.browser = await puppeteerExtra.launch(this.getLaunchOptions());
+      this.logger.log('Browser launched.');
+    }
+    const page = await this.browser.newPage();
+    await page.setUserAgent(
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36'
+    );
+    await page.setViewport({ width: 1366, height: 768 });
+    await page.setExtraHTTPHeaders({
+      'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+    });
+    return page;
   }
 
   private getLaunchOptions() {
