@@ -118,7 +118,7 @@ export class ScraperService {
     let totalNew = 0;
     try {
       const sources = await this.getActiveSources(priority);
-      for (const batch of this.batches(sources, 5)) {
+      for (const batch of this.batches(sources, 2)) {
         const results = await Promise.allSettled(
           batch.map((source) => this.scrapeSource(source))
         );
@@ -382,7 +382,8 @@ export class ScraperService {
 
   private async fetchTenders(source: LpseSource): Promise<TenderParseResult[]> {
     const pageUrl = `${source.baseUrl}/lelang`;
-    const year = new Date().getFullYear();
+    // SPSE uses next year's budget (tahun) for active tenders
+    const year = new Date().getFullYear() + 1;
 
     // 1. Try Python helper inside FlareSolverr container (bypasses Cloudflare via UC + Xvfb)
     const pyTenders = await this.fetchTendersViaPythonScript(pageUrl, source, year);
