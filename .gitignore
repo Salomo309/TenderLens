@@ -49,3 +49,4 @@ docker-compose.override.yml
 *.tar.gz
 *.tgz
 .aider*
+.env.dev
