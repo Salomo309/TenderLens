@@ -50,3 +50,4 @@ docker-compose.override.yml
 *.tgz
 .aider*
 .env.dev
+scripts/deploy.ps1
