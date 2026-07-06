@@ -8,6 +8,11 @@ import { PuppeteerService } from './puppeteer.service';
 import { FlaresolverrService } from './flaresolverr.service';
 import { TenderStage, TenderCategory, ScraperStatus, NotificationChannel } from '@prisma/client';
 import axios from 'axios';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+
+const execFileAsync = promisify(execFile);
+const FLARE_CONTAINER = process.env.FLARESOLVERR_CONTAINER || 'flaresolverr';
 
 interface LpseSource {
   name: string;
@@ -376,15 +381,45 @@ export class ScraperService {
   }
 
   private async fetchTenders(source: LpseSource): Promise<TenderParseResult[]> {
+    const pageUrl = `${source.baseUrl}/lelang`;
+    const year = new Date().getFullYear();
+
+    // 1. Try Python helper inside FlareSolverr container (bypasses Cloudflare via UC + Xvfb)
+    const pyTenders = await this.fetchTendersViaPythonScript(pageUrl, source, year);
+    if (pyTenders.length > 0) {
+      this.logger.log(`[${source.slug}] Got ${pyTenders.length} tenders via Python helper`);
+      return pyTenders;
+    }
+
+    // 2. Fall back to FlareSolverr HTTP + HTML parse
     try {
-      const pageUrl = `${source.baseUrl}/lelang`;
       this.logger.log(`[${source.slug}] Fetching tenders via Flaresolverr @ ${pageUrl}`);
 
       const fsResult = await this.flaresolverrService.fetchSession(pageUrl);
       const html = fsResult.html;
+      const cookies = fsResult.cookies;
+      const userAgent = fsResult.userAgent;
+
+      const token = this.extractToken(html);
+
+      if (token) {
+        this.logger.log(`[${source.slug}] Token found, attempting DataTable AJAX POST...`);
+        const apiTenders = await this.fetchTendersViaDataTable(source, token, cookies, userAgent, year);
+        if (apiTenders.length > 0) {
+          this.logger.log(`[${source.slug}] Got ${apiTenders.length} tenders via DataTable AJAX`);
+          return apiTenders;
+        }
+        this.logger.log(`[${source.slug}] DataTable AJAX returned 0 tenders, falling back to HTML parse`);
+      } else {
+        this.logger.log(`[${source.slug}] No token found, using HTML parse only`);
+      }
 
       const rows = this.parseHtmlTableRows(html);
       this.logger.log(`[${source.slug}] Parsed ${rows.length} rows from Flaresolverr HTML`);
+
+      if (rows.length >= 25) {
+        this.logger.warn(`[${source.slug}] Got ${rows.length} rows (may be truncated by server-side rendering limit)`);
+      }
 
       const allTenders = rows.map((row) => this.parseApiRow(row, source));
 
@@ -396,6 +431,169 @@ export class ScraperService {
     } catch (err: any) {
       this.logger.error(`[${source.slug}] fetchTenders failed: ${err.message}`);
       return [];
+    }
+  }
+
+  private async fetchTendersViaPythonScript(
+    pageUrl: string,
+    source: LpseSource,
+    year: number,
+  ): Promise<TenderParseResult[]> {
+    try {
+      this.logger.log(`[${source.slug}] Trying Python helper in container "${FLARE_CONTAINER}"...`);
+      const maxWait = process.env.PYTHON_SCRAPER_TIMEOUT || '60';
+      const { stdout, stderr } = await execFileAsync('docker', [
+        'exec', FLARE_CONTAINER,
+        'python3', '/app/flare_scraper.py',
+        pageUrl, String(year), maxWait, source.slug,
+      ], { timeout: 120_000, maxBuffer: 50 * 1024 * 1024 });
+
+      if (stderr) {
+        this.logger.debug(`[${source.slug}] Python stderr: ${stderr.slice(0, 500)}`);
+      }
+
+      const trimmed = stdout.trim();
+      if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+        this.logger.warn(`[${source.slug}] Python helper returned non-JSON (${trimmed.length} bytes)`);
+        return [];
+      }
+
+      const result = JSON.parse(trimmed);
+
+      if (result.error) {
+        this.logger.warn(`[${source.slug}] Python helper error: ${result.error}`);
+        return [];
+      }
+
+      const data: any[] = result.data || [];
+      this.logger.log(`[${source.slug}] Python helper returned ${data.length} raw rows (source=${result.source})`);
+
+      return data.map((row: any) => {
+        if (Array.isArray(row)) {
+          return this.parseApiRow(row, source);
+        }
+        return this.parseApiRow(
+          [
+            row.id || row.paket_id || '',
+            row.name || row.paket_nama || row.title || '',
+            row.instansi || row.agency || source.name,
+            row.status || '',
+            row.pagu || '0',
+            row.hps || '0',
+            row.versi_spse || '',
+            row.kategori || '',
+          ],
+          source,
+        );
+      });
+    } catch (err: any) {
+      this.logger.warn(`[${source.slug}] Python helper failed: ${err.message?.slice(0, 200)}`);
+      return [];
+    }
+  }
+
+  private async fetchTendersViaDataTable(
+    source: LpseSource,
+    token: string,
+    cookies: string[],
+    userAgent: string,
+    year: number,
+  ): Promise<TenderParseResult[]> {
+    const allTenders: TenderParseResult[] = [];
+    const apiSlug = source.apiSlug;
+    const apiUrl = `${source.baseUrl}/dt/lelang?tahun=${year}`;
+    const cookieStr = cookies.join('; ');
+    const pageSize = 200;
+    let start = 0;
+    let draw = 1;
+    let totalRecords = 0;
+    let maxPages = 50;
+
+    for (let page = 0; page < maxPages; page++) {
+      try {
+        const formData = new URLSearchParams();
+        formData.append('authenticityToken', token);
+        formData.append('draw', String(draw));
+        formData.append('start', String(start));
+        formData.append('length', String(pageSize));
+        for (let c = 0; c < 8; c++) {
+          formData.append(`columns[${c}][data]`, String(c));
+          formData.append(`columns[${c}][name]`, '');
+          formData.append(`columns[${c}][searchable]`, 'true');
+          formData.append(`columns[${c}][orderable]`, 'true');
+          formData.append(`columns[${c}][search][value]`, '');
+          formData.append(`columns[${c}][search][regex]`, 'false');
+        }
+        formData.append('order[0][column]', '0');
+        formData.append('order[0][dir]', 'asc');
+        formData.append('search[value]', '');
+        formData.append('search[regex]', 'false');
+
+        const result = await this.flaresolverrService.postWithSession(
+          apiUrl,
+          Object.fromEntries(formData.entries()),
+        );
+
+        const body = result.html;
+        const parsed = this.parseDataTableResponse(body);
+
+        if (!parsed) {
+          this.logger.log(`[${source.slug}] DataTable page ${page + 1}: non-JSON response (${body.length} bytes), stopping`);
+          break;
+        }
+
+        if (parsed.error) {
+          this.logger.warn(`[${source.slug}] DataTable page ${page + 1} error: ${parsed.error}`);
+          break;
+        }
+
+        totalRecords = parsed.recordsTotal;
+        const rows = parsed.data;
+        this.logger.log(`[${source.slug}] DataTable page ${page + 1}: ${rows.length} rows (total: ${totalRecords})`);
+
+        if (rows.length === 0) break;
+
+        for (const row of rows) {
+          allTenders.push(this.parseApiRow(row, source));
+        }
+
+        start += pageSize;
+        draw++;
+        if (start >= totalRecords) break;
+
+        await new Promise((r) => setTimeout(r, 1000));
+      } catch (err: any) {
+        this.logger.error(`[${source.slug}] DataTable page ${page + 1} failed: ${err.message}`);
+        break;
+      }
+    }
+
+    if (totalRecords > 0) {
+      this.logger.log(`[${source.slug}] DataTable complete: ${allTenders.length} tenders of ${totalRecords} total`);
+    }
+
+    return allTenders;
+  }
+
+  private parseDataTableResponse(body: string): { recordsTotal: number; data: any[][]; error?: string } | null {
+    const trimmed = body.trim();
+    if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+      return null;
+    }
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed.error) {
+        return { recordsTotal: 0, data: [], error: parsed.error };
+      }
+      if (typeof parsed.recordsTotal !== 'number' || !Array.isArray(parsed.data)) {
+        return null;
+      }
+      return {
+        recordsTotal: parsed.recordsTotal,
+        data: parsed.data,
+      };
+    } catch {
+      return null;
     }
   }
 
@@ -465,14 +663,14 @@ export class ScraperService {
       }
       if (cells.length >= 5) {
         rows.push([
-          this.stripHtml(cells[0]), // ID
-          cells[1],                 // Title (keep HTML for badges)
-          this.stripHtml(cells[2]), // Agency
-          this.stripHtml(cells[3]), // Status
-          this.stripHtml(cells[4]), // Pagu
-          '0',                      // HPS (not rendered in HTML)
-          '',                       // Extra columns
-          '',
+          this.stripHtml(cells[0]), // 0: ID
+          cells[1],                 // 1: Title (keep HTML for badges)
+          this.stripHtml(cells[2]), // 2: Agency
+          this.stripHtml(cells[3]), // 3: Status
+          this.stripHtml(cells[4]), // 4: Pagu
+          this.stripHtml(cells[5] || '0'), // 5: HPS (may be empty in HTML)
+          this.stripHtml(cells[8] || ''),  // 6: SPSE version
+          this.stripHtml(cells[11] || ''), // 7: Category text from table
         ]);
       }
     }
@@ -493,17 +691,6 @@ export class ScraperService {
     return '';
   }
 
-  private async fetchTendersPage(
-    source: LpseSource,
-    token: string,
-    cookies: string,
-    userAgent: string,
-    start: number,
-    length = 200,
-  ): Promise<TenderParseResult[]> {
-    return [];
-  }
-
   private parseApiRow(row: any[], source: LpseSource): TenderParseResult {
     const lpseId = `${source.slug}_${row[0] || ''}`;
     const rawTitle = (row[1] || '').replace(/<[^>]+>/g, '').trim();
@@ -511,6 +698,12 @@ export class ScraperService {
     const paguText = (row[4] || '0').replace(/\s+/g, ' ').trim();
     const hpsText = (row[5] || '0').replace(/\s+/g, ' ').trim();
     const statusText = (row[3] || '').toLowerCase();
+    const categoryText = (row[7] || '').toLowerCase();
+
+    let category = this.inferCategory(rawTitle);
+    if (category === TenderCategory.OTHER && categoryText) {
+      category = this.inferCategory(categoryText);
+    }
 
     return {
       lpseId,
@@ -518,7 +711,7 @@ export class ScraperService {
       agency,
       pagu: this.parseFormattedPagu(paguText),
       hps: this.parseFormattedPagu(hpsText),
-      category: this.inferCategory(rawTitle),
+      category,
       stage: this.mapStage(statusText),
       location: source.location,
       publishedAt: new Date(),

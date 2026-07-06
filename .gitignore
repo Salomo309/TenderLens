@@ -48,3 +48,4 @@ docker-compose.override.yml
 # Deployment artifacts
 *.tar.gz
 *.tgz
+.aider*

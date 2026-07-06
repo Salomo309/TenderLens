@@ -1,15 +1,23 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import type { Browser, Page, HTTPResponse } from 'puppeteer';
+import type { Page, HTTPResponse } from 'puppeteer';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const puppeteerExtra = require('puppeteer-extra');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+let puppeteerExtra: any = null;
 
 try {
-  puppeteerExtra.use(StealthPlugin());
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const pp = require('puppeteer-extra');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+  if (typeof StealthPlugin === 'function') {
+    pp.use(StealthPlugin());
+  }
+  puppeteerExtra = pp;
 } catch (e) {
-  // stealth plugin failed to initialize, continuing without it
+  try {
+    puppeteerExtra = require('puppeteer');
+  } catch (e2) {
+    puppeteerExtra = null;
+  }
 }
 
 export interface CookieParam {
@@ -20,9 +28,12 @@ export interface CookieParam {
 @Injectable()
 export class PuppeteerService implements OnModuleDestroy {
   private readonly logger = new Logger(PuppeteerService.name);
-  private browser: Browser | null = null;
+  private browser: any = null;
 
   async fetchSession(url: string): Promise<{ html: string; cookies: string[] }> {
+    if (!puppeteerExtra) {
+      throw new Error('Puppeteer not available on this system');
+    }
     const page = await this.getPage();
     try {
       await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 });
@@ -43,6 +54,9 @@ export class PuppeteerService implements OnModuleDestroy {
     pageSize = 200,
     maxPages = 5,
   ): Promise<string[]> {
+    if (!puppeteerExtra) {
+      throw new Error('Puppeteer not available on this system');
+    }
     const apiUrlPattern = new RegExp(apiPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 
     const page = await this.getPageForBrowserScrape(cookies);
