@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, Patch, UseGuards, Req, Res } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { RegisterVerifyDto } from './dto/register-verify.dto';
@@ -18,6 +19,7 @@ export class AuthController {
   ) {}
 
   @ApiOperation({ summary: 'Register a new tenant company account' })
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('register')
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
@@ -30,12 +32,14 @@ export class AuthController {
   }
 
   @ApiOperation({ summary: 'Resend verification code' })
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('register/resend-code')
   resendCode(@Body('userId') userId: string) {
     return this.authService.resendVerificationCode(userId);
   }
 
   @ApiOperation({ summary: 'Login with email and password' })
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
@@ -114,12 +118,14 @@ export class AuthController {
   }
 
   @ApiOperation({ summary: 'Request password reset code (forgot password)' })
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('password/forgot')
   async forgotPassword(@Body('email') email: string) {
     return this.authService.forgotPassword(email);
   }
 
   @ApiOperation({ summary: 'Reset password with code received via email' })
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('password/reset')
   async resetPassword(
     @Body('email') email: string,
