@@ -268,7 +268,20 @@ export class AuthService {
     };
   }
 
-  async requestEmailChange(userId: string, newEmail: string) {
+  async requestEmailChange(userId: string, newEmail: string, currentPassword: string) {
+    if (!currentPassword) {
+      throw new BadRequestException('Password saat ini wajib diisi untuk mengganti email.');
+    }
+
+    const userForPw = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!userForPw || !userForPw.passwordHash) {
+      throw new BadRequestException('Akun ini tidak memiliki password.');
+    }
+    const pwValid = await bcrypt.compare(currentPassword, userForPw.passwordHash);
+    if (!pwValid) {
+      throw new UnauthorizedException('Password saat ini tidak sesuai.');
+    }
+
     const existing = await this.prisma.user.findUnique({ where: { email: newEmail } });
     if (existing) {
       throw new ConflictException('Email sudah digunakan.');

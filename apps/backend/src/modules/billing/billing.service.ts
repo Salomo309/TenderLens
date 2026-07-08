@@ -37,8 +37,8 @@ export class BillingService {
    */
   validateSignature(dto: MidtransNotificationDto): boolean {
     if (!this.serverKey) {
-      this.logger.warn('MIDTRANS_SERVER_KEY not set — skipping webhook signature validation.');
-      return true;
+      this.logger.error('MIDTRANS_SERVER_KEY is not configured — cannot verify webhook signature.');
+      return false;
     }
 
     const payload = dto.order_id + dto.status_code + dto.gross_amount + this.serverKey;

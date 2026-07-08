@@ -43,7 +43,14 @@ export class AdminController {
   async getUsers(@CurrentUser() user: JwtPayload) {
     this.checkAdmin(user);
     const users = await this.prisma.user.findMany({
-      include: {
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        avatarUrl: true,
+        emailVerified: true,
+        createdAt: true,
+        updatedAt: true,
         tenantMembers: {
           include: { tenant: { select: { id: true, name: true } } },
         },

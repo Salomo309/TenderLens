@@ -50,4 +50,5 @@ docker-compose.override.yml
 *.tgz
 .aider*
 .env.dev
+.env.prod
 scripts/deploy.ps1

@@ -117,9 +117,8 @@ export class ScraperService {
     }
 
     this.isScraping = true;
-    await this.flaresolverrService.initSession();
-    const batchSize = priority === 3 ? 1 : 2;
-    const interBatchDelay = priority === 3 ? 3000 : 2000;
+    const batchSize = 2;
+    const interBatchDelay = 2000;
     let totalNew = 0;
     try {
       const sources = await this.getActiveSources(priority);
@@ -142,7 +141,6 @@ export class ScraperService {
 
     return totalNew;
     } finally {
-      await this.flaresolverrService.destroySession().catch(() => {});
       this.isScraping = false;
     }
   }
@@ -400,10 +398,12 @@ export class ScraperService {
     }
 
     // 2. Fall back to FlareSolverr HTTP + HTML parse
+    let fsSession = '';
     try {
       this.logger.log(`[${source.slug}] Fetching tenders via Flaresolverr @ ${pageUrl}`);
 
       const fsResult = await this.flaresolverrService.fetchSession(pageUrl);
+      fsSession = fsResult.session;
       const html = fsResult.html;
       const cookies = fsResult.cookies;
       const userAgent = fsResult.userAgent;
@@ -412,7 +412,7 @@ export class ScraperService {
 
       if (token) {
         this.logger.log(`[${source.slug}] Token found, attempting DataTable AJAX POST...`);
-        const apiTenders = await this.fetchTendersViaDataTable(source, token, cookies, userAgent, year);
+        const apiTenders = await this.fetchTendersViaDataTable(source, token, cookies, userAgent, year, fsSession);
         if (apiTenders.length > 0) {
           this.logger.log(`[${source.slug}] Got ${apiTenders.length} tenders via DataTable AJAX`);
           return apiTenders;
@@ -439,6 +439,10 @@ export class ScraperService {
     } catch (err: any) {
       this.logger.error(`[${source.slug}] fetchTenders failed: ${err.message}`);
       return [];
+    } finally {
+      if (fsSession) {
+        this.flaresolverrService.destroySession(fsSession).catch(() => {});
+      }
     }
   }
 
@@ -448,7 +452,7 @@ export class ScraperService {
     year: number,
   ): Promise<TenderParseResult[]> {
     try {
-      this.logger.log(`[${source.slug}] Trying Python helper in container "${FLARE_CONTAINER}"...`);
+      this.logger.debug(`[${source.slug}] Trying Python helper in container "${FLARE_CONTAINER}"...`);
       const maxWait = process.env.PYTHON_SCRAPER_TIMEOUT || '60';
       const { stdout, stderr } = await execFileAsync('docker', [
         'exec', FLARE_CONTAINER,
@@ -462,14 +466,14 @@ export class ScraperService {
 
       const trimmed = stdout.trim();
       if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
-        this.logger.warn(`[${source.slug}] Python helper returned non-JSON (${trimmed.length} bytes)`);
+        this.logger.debug(`[${source.slug}] Python helper returned non-JSON (${trimmed.length} bytes)`);
         return [];
       }
 
       const result = JSON.parse(trimmed);
 
       if (result.error) {
-        this.logger.warn(`[${source.slug}] Python helper error: ${result.error}`);
+        this.logger.debug(`[${source.slug}] Python helper error: ${result.error}`);
         return [];
       }
 
@@ -495,7 +499,7 @@ export class ScraperService {
         );
       });
     } catch (err: any) {
-      this.logger.warn(`[${source.slug}] Python helper failed: ${err.message?.slice(0, 200)}`);
+      this.logger.debug(`[${source.slug}] Python helper failed: ${err.message?.slice(0, 200)}`);
       return [];
     }
   }
@@ -506,6 +510,7 @@ export class ScraperService {
     cookies: string[],
     userAgent: string,
     year: number,
+    fsSession: string,
   ): Promise<TenderParseResult[]> {
     const allTenders: TenderParseResult[] = [];
     const apiSlug = source.apiSlug;
@@ -540,6 +545,7 @@ export class ScraperService {
         const result = await this.flaresolverrService.postWithSession(
           apiUrl,
           Object.fromEntries(formData.entries()),
+          fsSession,
         );
 
         const body = result.html;
@@ -632,9 +638,11 @@ export class ScraperService {
     let html: string;
     let cookieList: string[];
     let userAgent = '';
+    let fsSession = '';
     try {
       this.logger.log(`[${source.slug}] Trying Flaresolverr...`);
       const result = await this.flaresolverrService.fetchSession(pageUrl);
+      fsSession = result.session;
       html = result.html;
       cookieList = result.cookies;
       userAgent = result.userAgent;
@@ -643,6 +651,10 @@ export class ScraperService {
       const result = await this.puppeteerService.fetchSession(pageUrl);
       html = result.html;
       cookieList = result.cookies;
+    } finally {
+      if (fsSession) {
+        this.flaresolverrService.destroySession(fsSession).catch(() => {});
+      }
     }
     const token = this.extractToken(html);
     const cookies = cookieList.join('; ');
@@ -702,7 +714,7 @@ export class ScraperService {
   private parseApiRow(row: any[], source: LpseSource): TenderParseResult {
     const lpseId = `${source.slug}_${row[0] || ''}`;
     const rawTitle = (row[1] || '').replace(/<[^>]+>/g, '').trim();
-    const agency = (row[2] || source.name).replace(/\s+/g, ' ').trim();
+    const agency = (row[2] || source.name).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
     const paguText = (row[4] || '0').replace(/\s+/g, ' ').trim();
     const hpsText = (row[5] || '0').replace(/\s+/g, ' ').trim();
     const statusText = (row[3] || '').toLowerCase();

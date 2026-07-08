@@ -1,12 +1,15 @@
-import { Controller, Get, Post, Param, Query, UseGuards, Body, HttpException } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, UseGuards, Body, HttpException, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from '../prisma/prisma.service';
 import { ScraperStatus } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser, JwtPayload } from '../auth/decorators/current-user.decorator';
 import { ScraperService } from './services/scraper.service';
 import axios from 'axios';
 
 @ApiTags('scraper')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('scraper-monitor')
 export class ScraperMonitorController {
   constructor(
@@ -14,9 +17,16 @@ export class ScraperMonitorController {
     private readonly scraperService: ScraperService,
   ) {}
 
-  @ApiOperation({ summary: 'Trigger an immediate scrape of all LPSE sources' })
+  private checkSuperadmin(user: JwtPayload) {
+    if (user.role !== 'SUPERADMIN') {
+      throw new ForbiddenException('Akses ditolak. Hanya SUPERADMIN.');
+    }
+  }
+
+  @ApiOperation({ summary: 'Trigger an immediate scrape of all LPSE sources (SUPERADMIN only)' })
   @Post('scrape')
-  async triggerScrape() {
+  async triggerScrape(@CurrentUser() user: JwtPayload) {
+    this.checkSuperadmin(user);
     const total = await this.scraperService.scrapeAll();
     return { message: `Scrape cycle completed. ${total} tenders processed.`, total };
   }
@@ -24,6 +34,7 @@ export class ScraperMonitorController {
   @ApiOperation({ summary: 'Get scraper execution logs' })
   @Get('logs')
   async getLogs(
+    @CurrentUser() user: JwtPayload,
     @Query('status') status?: ScraperStatus,
     @Query('crawler') crawler?: string,
     @Query('limit') limit?: number
@@ -47,7 +58,7 @@ export class ScraperMonitorController {
 
   @ApiOperation({ summary: 'Get scraper health and uptime for all crawlers' })
   @Get('health')
-  async getUptimeHealth() {
+  async getUptimeHealth(@CurrentUser() user: JwtPayload) {
     const sources = await this.prisma.lpseSource.findMany({
       select: { slug: true, name: true, isActive: true },
     });
@@ -67,7 +78,7 @@ export class ScraperMonitorController {
         const totalRuns = logs.length;
         const successRuns = logs.filter((l) => l.status === ScraperStatus.SUCCESS).length;
         const failedRuns = logs.filter((l) => l.status === ScraperStatus.CRITICAL_FAILURE).length;
-        
+
         const uptime = totalRuns > 0 ? (successRuns / totalRuns) * 100 : null;
         const totalItemsCrawled = logs.reduce((sum, item) => sum + item.itemsCrawled, 0);
 
@@ -110,7 +121,8 @@ export class ScraperMonitorController {
 
   @ApiOperation({ summary: 'Debug: test-fetch a URL and return response info (SUPERADMIN only)' })
   @Post('debug-fetch')
-  async debugFetch(@Body() body: { url: string }) {
+  async debugFetch(@CurrentUser() user: JwtPayload, @Body() body: { url: string }) {
+    this.checkSuperadmin(user);
     if (!body.url) throw new HttpException('URL required', 400);
     try {
       const response = await axios.get(body.url, {

@@ -53,7 +53,7 @@ export class AuthController {
     const { jwt, user, tenant } = await this.authService.handleGoogleLogin(req.user);
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
     const tenantId = tenant?.id || '';
-    res.redirect(`${frontendUrl}/auth/callback?token=${jwt}&userId=${user.id}&tenantId=${tenantId}`);
+    res.redirect(`${frontendUrl}/auth/callback#token=${jwt}&userId=${user.id}&tenantId=${tenantId}`);
   }
 
   @ApiBearerAuth()
@@ -89,8 +89,9 @@ export class AuthController {
   async requestEmailChange(
     @CurrentUser() user: JwtPayload,
     @Body('newEmail') newEmail: string,
+    @Body('currentPassword') currentPassword: string,
   ) {
-    return this.authService.requestEmailChange(user.sub, newEmail);
+    return this.authService.requestEmailChange(user.sub, newEmail, currentPassword);
   }
 
   @UseGuards(JwtAuthGuard)
