@@ -5,19 +5,13 @@ import { NotificationChannel } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser, JwtPayload } from '../auth/decorators/current-user.decorator';
 import { SubscriptionHelper } from '../../common/helpers/subscription.helper';
+import { CreateAlertDto } from './dto/create-alert.dto';
 
 const CHANNEL_LABELS: Record<string, string> = {
   EMAIL: 'Email',
   TELEGRAM: 'Telegram',
   WEB_DASHBOARD: 'Dashboard',
 };
-
-interface CreateAlertDto {
-  keyword: string;
-  channels: NotificationChannel[];
-  telegramChatId?: string;
-  emailAddress?: string;
-}
 
 @ApiTags('alerts')
 @ApiBearerAuth()
@@ -51,26 +45,27 @@ export class AlertsController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: CreateAlertDto
   ) {
-    await this.subscriptionHelper.checkKeywordLimit(user.tenantId);
+    // Atomic: check limit + create dalam satu transaksi — cegah race condition
+    return this.subscriptionHelper.checkKeywordLimitAtomic(user.tenantId, async (tx) => {
+      // Auto-fill email with user's account email if not explicitly provided
+      let emailAddress = dto.emailAddress;
+      if (!emailAddress && dto.channels.includes('EMAIL' as any)) {
+        const member = await tx.tenantMember.findFirst({
+          where: { userId: user.sub },
+          include: { user: true },
+        });
+        emailAddress = member?.user.email || null;
+      }
 
-    // Auto-fill email with user's account email if not explicitly provided
-    let emailAddress = dto.emailAddress;
-    if (!emailAddress && dto.channels.includes('EMAIL' as any)) {
-      const member = await this.prisma.tenantMember.findFirst({
-        where: { userId: user.sub },
-        include: { user: true },
+      return tx.keywordAlert.create({
+        data: {
+          tenantId: user.tenantId,
+          keyword: dto.keyword,
+          channels: dto.channels,
+          telegramChatId: dto.telegramChatId || null,
+          emailAddress: emailAddress,
+        },
       });
-      emailAddress = member?.user.email || null;
-    }
-
-    return this.prisma.keywordAlert.create({
-      data: {
-        tenantId: user.tenantId,
-        keyword: dto.keyword,
-        channels: dto.channels,
-        telegramChatId: dto.telegramChatId || null,
-        emailAddress: emailAddress,
-      },
     });
   }
 

@@ -112,4 +112,20 @@ export class AuthController {
   ) {
     return this.authService.changePassword(user.sub, currentPassword, newPassword);
   }
+
+  @ApiOperation({ summary: 'Request password reset code (forgot password)' })
+  @Post('password/forgot')
+  async forgotPassword(@Body('email') email: string) {
+    return this.authService.forgotPassword(email);
+  }
+
+  @ApiOperation({ summary: 'Reset password with code received via email' })
+  @Post('password/reset')
+  async resetPassword(
+    @Body('email') email: string,
+    @Body('code') code: string,
+    @Body('newPassword') newPassword: string,
+  ) {
+    return this.authService.resetPassword(email, code, newPassword);
+  }
 }

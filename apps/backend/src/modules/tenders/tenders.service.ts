@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiSummaryService } from './ai-summary.service';
 import { TenderCategory, TenderStage, Prisma } from '@prisma/client';
@@ -123,26 +123,37 @@ export class TendersService {
   /**
    * Saved & Bookmarked toggler for specific tenant scopes
    */
-  async toggleSavedStatus(tenantId: string, tenderId: string) {
-    const existing = await this.prisma.savedTender.findUnique({
-      where: {
-        tenantId_tenderId: { tenantId, tenderId },
-      },
-    });
-
-    if (existing) {
-      await this.prisma.savedTender.delete({
+  async toggleSavedStatus(tenantId: string, tenderId: string, maxSavedTenders?: number) {
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.savedTender.findUnique({
         where: {
           tenantId_tenderId: { tenantId, tenderId },
         },
       });
-      return { saved: false };
-    } else {
-      await this.prisma.savedTender.create({
+
+      if (existing) {
+        await tx.savedTender.delete({
+          where: {
+            tenantId_tenderId: { tenantId, tenderId },
+          },
+        });
+        return { saved: false };
+      }
+
+      if (maxSavedTenders !== undefined) {
+        const count = await tx.savedTender.count({ where: { tenantId } });
+        if (count >= maxSavedTenders) {
+          throw new ForbiddenException(
+            `Batas maksimal ${maxSavedTenders} tender tersimpan tercapai. Upgrade paket untuk menyimpan lebih banyak.`
+          );
+        }
+      }
+
+      await tx.savedTender.create({
         data: { tenantId, tenderId },
       });
       return { saved: true };
-    }
+    });
   }
 
   /**

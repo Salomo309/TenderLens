@@ -47,6 +47,7 @@ model User {
   emailVerified           Boolean        @default(false)
   emailVerificationCode   String?
   emailVerificationExpiresAt DateTime?
+  passwordChangedAt       DateTime?
   createdAt               DateTime       @default(now())
   updatedAt               DateTime       @updatedAt
   

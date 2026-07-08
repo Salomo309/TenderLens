@@ -12,24 +12,30 @@ export class SubscriptionHelper {
     return { tier, plan: getPlanConfig(tier) };
   }
 
-  async checkKeywordLimit(tenantId: string): Promise<void> {
-    const { plan } = await this.getPlan(tenantId);
-    const count = await this.prisma.keywordAlert.count({ where: { tenantId } });
-    if (count >= plan.maxKeywords) {
-      throw new ForbiddenException(
-        `Batas maksimal ${plan.maxKeywords} kata kunci tercapai. Upgrade paket untuk menambah lebih banyak.`
-      );
-    }
+  async checkKeywordLimitAtomic(tenantId: string, createFn: (tx: any) => Promise<any>): Promise<any> {
+    return this.prisma.$transaction(async (tx) => {
+      const { plan } = await this.getPlan(tenantId);
+      const count = await tx.keywordAlert.count({ where: { tenantId } });
+      if (count >= plan.maxKeywords) {
+        throw new ForbiddenException(
+          `Batas maksimal ${plan.maxKeywords} kata kunci tercapai. Upgrade paket untuk menambah lebih banyak.`
+        );
+      }
+      return createFn(tx);
+    });
   }
 
-  async checkSavedTenderLimit(tenantId: string): Promise<void> {
-    const { plan } = await this.getPlan(tenantId);
-    const count = await this.prisma.savedTender.count({ where: { tenantId } });
-    if (count >= plan.maxSavedTenders) {
-      throw new ForbiddenException(
-        `Batas maksimal ${plan.maxSavedTenders} tender tersimpan tercapai. Upgrade paket untuk menyimpan lebih banyak.`
-      );
-    }
+  async checkSavedTenderLimitAtomic(tenantId: string, createFn: (tx: any) => Promise<any>): Promise<any> {
+    return this.prisma.$transaction(async (tx) => {
+      const { plan } = await this.getPlan(tenantId);
+      const count = await tx.savedTender.count({ where: { tenantId } });
+      if (count >= plan.maxSavedTenders) {
+        throw new ForbiddenException(
+          `Batas maksimal ${plan.maxSavedTenders} tender tersimpan tercapai. Upgrade paket untuk menyimpan lebih banyak.`
+        );
+      }
+      return createFn(tx);
+    });
   }
 
   async checkAndIncrementAiSummary(tenantId: string): Promise<void> {

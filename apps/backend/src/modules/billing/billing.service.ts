@@ -214,28 +214,40 @@ export class BillingService {
 
     // 2. Upgrade tenant subscription structure if payment is cleared
     if (shouldActivateSubscription) {
-      const expirationDate = new Date();
-      expirationDate.setDate(expirationDate.getDate() + 30); // 30-day license active
-
-      // Baca tier langsung dari invoice (bukan dari nominal)
       const targetTier = invoice.tier;
 
-      await this.prisma.subscription.upsert({
-        where: { tenantId: invoice.tenantId },
-        update: {
-          tier: targetTier,
-          status: SubscriptionStatus.ACTIVE,
-          expiresAt: expirationDate,
-        },
-        create: {
-          tenantId: invoice.tenantId,
-          tier: targetTier,
-          status: SubscriptionStatus.ACTIVE,
-          expiresAt: expirationDate,
-        },
-      });
+      await this.prisma.$transaction(async (tx) => {
+        const existing = await tx.subscription.findUnique({ where: { tenantId: invoice.tenantId } });
+        const now = new Date();
+        let expirationDate: Date;
 
-      this.logger.log(`Tenant ${invoice.tenantId} upgraded successfully to ${targetTier}. Expires on: ${expirationDate.toISOString()}`);
+        if (existing && existing.expiresAt > now && existing.status === SubscriptionStatus.ACTIVE) {
+          // Renewal: extend from current expiry date
+          expirationDate = new Date(existing.expiresAt);
+          expirationDate.setDate(expirationDate.getDate() + 30);
+        } else {
+          // New subscription or expired: 30 days from now
+          expirationDate = new Date(now);
+          expirationDate.setDate(expirationDate.getDate() + 30);
+        }
+
+        await tx.subscription.upsert({
+          where: { tenantId: invoice.tenantId },
+          update: {
+            tier: targetTier,
+            status: SubscriptionStatus.ACTIVE,
+            expiresAt: expirationDate,
+          },
+          create: {
+            tenantId: invoice.tenantId,
+            tier: targetTier,
+            status: SubscriptionStatus.ACTIVE,
+            expiresAt: expirationDate,
+          },
+        });
+
+        this.logger.log(`Tenant ${invoice.tenantId} upgraded successfully to ${targetTier}. Expires on: ${expirationDate.toISOString()}`);
+      });
     }
 
     return { status: 'success', invoiceStatus: finalInvoiceStatus };

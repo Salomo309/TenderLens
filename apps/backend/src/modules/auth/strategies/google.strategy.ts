@@ -18,6 +18,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'disabled',
       callbackURL: `${process.env.BACKEND_URL || 'http://localhost:3000'}/api/auth/google/callback`,
       scope: ['email', 'profile'],
+      state: true,
     });
   }
 
@@ -52,6 +53,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
               email,
               name: displayName,
               avatarUrl: photos?.[0]?.value || null,
+              emailVerified: true,
             },
           });
 

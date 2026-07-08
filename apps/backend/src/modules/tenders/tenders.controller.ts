@@ -101,13 +101,7 @@ export class TendersController {
     @Param('id') id: string,
     @CurrentUser() user: JwtPayload,
   ) {
-    // Check if already saved (if so, unsaving should always be allowed)
-    const existing = await this.prisma.savedTender.findUnique({
-      where: { tenantId_tenderId: { tenantId: user.tenantId, tenderId: id } },
-    });
-    if (!existing) {
-      await this.subscriptionHelper.checkSavedTenderLimit(user.tenantId);
-    }
-    return this.tendersService.toggleSavedStatus(user.tenantId, id);
+    const { plan } = await this.subscriptionHelper.getPlan(user.tenantId);
+    return this.tendersService.toggleSavedStatus(user.tenantId, id, plan.maxSavedTenders);
   }
 }

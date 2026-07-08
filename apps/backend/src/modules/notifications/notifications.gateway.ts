@@ -6,6 +6,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 
 @WebSocketGateway({
   cors: {
@@ -23,11 +24,26 @@ export class NotificationsGateway
   private readonly logger = new Logger(NotificationsGateway.name);
   private tenantSockets = new Map<string, Set<string>>();
 
+  constructor(private readonly jwtService: JwtService) {}
+
   handleConnection(client: Socket) {
     const tenantId = client.handshake.query.tenantId as string;
-    const token = client.handshake.auth?.token || client.handshake.query?.token;
+    const token = client.handshake.auth?.token || client.handshake.query?.token as string;
 
     if (!tenantId || !token) {
+      client.disconnect();
+      return;
+    }
+
+    try {
+      const payload = this.jwtService.verify(token);
+      if (payload.tenantId !== tenantId) {
+        this.logger.warn(`Socket tenant mismatch: token=${payload.tenantId} != requested=${tenantId}`);
+        client.disconnect();
+        return;
+      }
+    } catch {
+      this.logger.warn(`Socket rejected: invalid JWT for tenant ${tenantId}`);
       client.disconnect();
       return;
     }

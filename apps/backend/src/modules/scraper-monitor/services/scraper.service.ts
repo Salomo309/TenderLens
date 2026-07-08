@@ -1,4 +1,4 @@
-import { Injectable, Logger, Optional } from '@nestjs/common';
+import { Injectable, Logger, Optional, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
@@ -38,9 +38,15 @@ const STAGE_MAP: Record<string, TenderStage> = {
 };
 
 @Injectable()
-export class ScraperService {
+export class ScraperService implements OnModuleInit {
   private readonly logger = new Logger(ScraperService.name);
   private isScraping = false;
+
+  onModuleInit() {
+    this.isScraping = false;
+    this.logger.log('isScraping reset to false on module init');
+  }
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,

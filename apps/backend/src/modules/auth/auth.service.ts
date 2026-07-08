@@ -427,9 +427,95 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.prisma.user.update({
       where: { id: userId },
-      data: { passwordHash },
+      data: { passwordHash, passwordChangedAt: new Date() },
     });
 
-    return { message: 'Password berhasil diperbarui.' };
+    return { message: 'Password berhasil diperbarui. Semua sesi akan diminta login ulang.' };
+  }
+
+  async forgotPassword(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      // Jangan kasih tahu apakah email terdaftar (prevent email enumeration)
+      return { message: 'Jika email terdaftar, kode reset akan dikirim.' };
+    }
+
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerificationCode: code, emailVerificationExpiresAt: expiresAt },
+    });
+
+    await this.forgotPasswordEmail(user.email, code);
+    return { message: 'Jika email terdaftar, kode reset akan dikirim.', expiresInMinutes: 15 };
+  }
+
+  async resetPassword(email: string, code: string, newPassword: string) {
+    if (newPassword.length < 6) {
+      throw new BadRequestException('Password baru minimal 6 karakter.');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new BadRequestException('Email tidak ditemukan.');
+    }
+
+    if (!user.emailVerificationCode || !user.emailVerificationExpiresAt) {
+      throw new BadRequestException('Tidak ada kode reset. Silakan minta kode baru.');
+    }
+
+    if (user.emailVerificationExpiresAt < new Date()) {
+      throw new BadRequestException('Kode reset sudah kedaluwarsa.');
+    }
+
+    if (user.emailVerificationCode !== code.toUpperCase()) {
+      throw new BadRequestException('Kode reset salah.');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash,
+        passwordChangedAt: new Date(),
+        emailVerificationCode: null,
+        emailVerificationExpiresAt: null,
+      },
+    });
+
+    return { message: 'Password berhasil direset. Silakan login dengan password baru.' };
+  }
+
+  private async forgotPasswordEmail(to: string, code: string) {
+    const resendKey = process.env.RESEND_API_KEY;
+    const mailFrom = process.env.MAIL_FROM || 'no-reply@sinyaltender.id';
+
+    if (!resendKey) {
+      Logger.warn(`RESEND_API_KEY not set. Dev mode — reset code for ${to}: ${code}`);
+      return;
+    }
+
+    try {
+      const resp = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${resendKey}`,
+        },
+        body: JSON.stringify({
+          from: mailFrom,
+          to,
+          subject: '[SinyalTender] Reset Password Anda',
+          text: `Gunakan kode berikut untuk mereset password Anda:\n\n${code}\n\nKode berlaku 15 menit.\n\nJika Anda tidak meminta reset password, abaikan email ini.`,
+        }),
+      });
+      if (!resp.ok) {
+        Logger.warn(`Resend responded with ${resp.status}: ${await resp.text()}`);
+      }
+    } catch (err) {
+      Logger.warn(`Failed to send reset email: ${err}`);
+    }
   }
 }

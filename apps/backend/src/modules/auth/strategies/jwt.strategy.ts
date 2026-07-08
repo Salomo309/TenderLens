@@ -28,6 +28,21 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User tidak ditemukan.');
     }
 
+    // Cek apakah password diubah setelah token dikeluarkan
+    if (user.passwordChangedAt && payload.iat) {
+      const changedMs = new Date(user.passwordChangedAt).getTime();
+      const tokenIatMs = payload.iat * 1000;
+      if (changedMs > tokenIatMs) {
+        throw new UnauthorizedException('Password telah diubah. Silakan login ulang.');
+      }
+    }
+
+    // Cek apakah user masih jadi member tenant
+    const stillMember = user.tenantMembers.some((m) => m.tenantId === payload.tenantId);
+    if (!stillMember) {
+      throw new UnauthorizedException('Anda tidak lagi terdaftar di tenant ini.');
+    }
+
     return payload;
   }
 }

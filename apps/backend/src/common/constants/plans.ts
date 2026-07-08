@@ -11,7 +11,6 @@ export interface PlanConfig {
   maxKeywords: number;
   maxSavedTenders: number;
   maxAiSummariesPerMonth: number;
-  notificationDelayMinutes: number;
   telegramGroupAllowed: boolean;
   competitorHistory: boolean;
   features: string[];
@@ -24,7 +23,6 @@ export const PLANS: Record<string, PlanConfig> = {
     maxKeywords: 1,
     maxSavedTenders: 10,
     maxAiSummariesPerMonth: 2,
-    notificationDelayMinutes: 0,
     telegramGroupAllowed: false,
     competitorHistory: false,
     features: [
@@ -40,7 +38,6 @@ export const PLANS: Record<string, PlanConfig> = {
     maxKeywords: 3,
     maxSavedTenders: 30,
     maxAiSummariesPerMonth: 3,
-    notificationDelayMinutes: 30,
     telegramGroupAllowed: false,
     competitorHistory: false,
     features: [
@@ -56,7 +53,6 @@ export const PLANS: Record<string, PlanConfig> = {
     maxKeywords: 10,
     maxSavedTenders: 100,
     maxAiSummariesPerMonth: 20,
-    notificationDelayMinutes: 0,
     telegramGroupAllowed: true,
     competitorHistory: true,
     features: [
@@ -73,7 +69,6 @@ export const PLANS: Record<string, PlanConfig> = {
     maxKeywords: 9999,
     maxSavedTenders: 9999,
     maxAiSummariesPerMonth: 9999,
-    notificationDelayMinutes: 0,
     telegramGroupAllowed: true,
     competitorHistory: true,
     features: [

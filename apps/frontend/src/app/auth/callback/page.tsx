@@ -1,26 +1,41 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Spinner } from '@/components/ui/spinner';
+
+function parseHashParams(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  const hash = window.location.hash.replace(/^#/, '');
+  const params: Record<string, string> = {};
+  for (const part of hash.split('&')) {
+    const [key, val] = part.split('=');
+    if (key && val) params[decodeURIComponent(key)] = decodeURIComponent(val);
+  }
+  return params;
+}
 
 export default function AuthCallbackPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const token = searchParams.get('token') || searchParams.get('access_token');
-    const userId = searchParams.get('userId');
+    // Google OAuth uses hash fragment; direct login uses query params
+    const hashParams = parseHashParams();
+    const urlParams = new URLSearchParams(window.location.search.replace(/^\?/, ''));
+    const token = hashParams.token || urlParams.get('token') || urlParams.get('access_token');
+    const userId = hashParams.userId || urlParams.get('userId');
 
     if (token) {
       localStorage.setItem('token', token);
       document.cookie = `token=${token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+      // Clean URL — remove token from hash/query for security
+      window.history.replaceState({}, document.title, window.location.pathname);
       router.push('/dashboard');
     } else {
       setError('Token otentikasi tidak ditemukan. Silakan coba login kembali.');
     }
-  }, [searchParams, router]);
+  }, [router]);
 
   if (error) {
     return (
