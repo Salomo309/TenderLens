@@ -11,6 +11,8 @@ import axios from 'axios';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 const execFileAsync = promisify(execFile);
 const FLARE_CONTAINER = process.env.FLARESOLVERR_CONTAINER || 'flaresolverr';
 
@@ -115,10 +117,13 @@ export class ScraperService {
     }
 
     this.isScraping = true;
+    await this.flaresolverrService.initSession();
+    const batchSize = priority === 3 ? 1 : 2;
+    const interBatchDelay = priority === 3 ? 3000 : 2000;
     let totalNew = 0;
     try {
       const sources = await this.getActiveSources(priority);
-      for (const batch of this.batches(sources, 2)) {
+      for (const batch of this.batches(sources, batchSize)) {
         const results = await Promise.allSettled(
           batch.map((source) => this.scrapeSource(source))
         );
@@ -126,6 +131,7 @@ export class ScraperService {
           if (r.status === 'fulfilled') return sum + r.value;
           return sum;
         }, 0);
+        if (interBatchDelay > 0) await sleep(interBatchDelay);
       }
 
     this.logger.log(`Scrape cycle complete. Total new/updated tenders: ${totalNew}`);
@@ -136,6 +142,7 @@ export class ScraperService {
 
     return totalNew;
     } finally {
+      await this.flaresolverrService.destroySession().catch(() => {});
       this.isScraping = false;
     }
   }

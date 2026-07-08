@@ -21,8 +21,18 @@ async function bootstrap() {
   app.useGlobalFilters(new PrismaExceptionFilter());
 
   // Configure CORS handles for client dashboard connections
+  const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3001')
+    .split(',')
+    .map(s => s.trim());
+
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
     credentials: true,
   });
 

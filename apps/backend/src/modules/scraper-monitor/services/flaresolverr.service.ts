@@ -6,14 +6,38 @@ export class FlaresolverrService {
   private readonly logger = new Logger(FlaresolverrService.name);
   private readonly baseUrl = 'http://localhost:8191/v1';
   private sessionId: string | null = null;
+  private sessionTtlMs = 120_000;
+  private sessionExpiresAt = 0;
 
-  async fetchSession(url: string): Promise<{ html: string; cookies: string[]; userAgent: string }> {
-    // Destroy previous session to get fresh data
-    await this.destroySession();
-    return this.requestGet(url);
+  private isSessionExpired(): boolean {
+    return Date.now() > this.sessionExpiresAt;
   }
 
-  private async destroySession(): Promise<void> {
+  private renewSessionId() {
+    this.sessionId = `sess_${Date.now()}`;
+    this.sessionExpiresAt = Date.now() + this.sessionTtlMs;
+  }
+
+  async initSession(): Promise<void> {
+    await this.destroySession();
+    this.renewSessionId();
+    this.logger.log(`FlareSolverr session initialized: ${this.sessionId}`);
+  }
+
+  private async ensureSession(): Promise<string> {
+    if (!this.sessionId || this.isSessionExpired()) {
+      this.renewSessionId();
+      this.logger.log(`FlareSolverr session renewed: ${this.sessionId}`);
+    }
+    return this.sessionId!;
+  }
+
+  async fetchSession(url: string): Promise<{ html: string; cookies: string[]; userAgent: string }> {
+    const sid = await this.ensureSession();
+    return this.requestGet(url, sid);
+  }
+
+  async destroySession(): Promise<void> {
     if (!this.sessionId) return;
     try {
       await axios.post(this.baseUrl, { cmd: 'sessions.destroy', session: this.sessionId }, { timeout: 5000 });
@@ -21,10 +45,12 @@ export class FlaresolverrService {
       // ignore destroy errors
     }
     this.sessionId = null;
+    this.sessionExpiresAt = 0;
   }
 
   async getSession(url: string): Promise<{ cookies: string[]; userAgent: string }> {
-    const res = await this.requestGet(url);
+    const sid = await this.ensureSession();
+    const res = await this.requestGet(url, sid);
     return { cookies: res.cookies, userAgent: res.userAgent };
   }
 
@@ -32,20 +58,12 @@ export class FlaresolverrService {
     url: string,
     formData: Record<string, string>,
   ): Promise<{ html: string; cookies: string[] }> {
-    const sessionId = this.sessionId || `session_${Date.now()}`;
-    if (!this.sessionId) {
-      this.sessionId = sessionId;
-    }
-
-    const flaresolverrRes = await this.requestPost(url, formData, sessionId);
+    const sid = await this.ensureSession();
+    const flaresolverrRes = await this.requestPost(url, formData, sid);
     return { html: flaresolverrRes.html, cookies: flaresolverrRes.cookies };
   }
 
-  private async requestGet(url: string): Promise<{ html: string; cookies: string[]; userAgent: string }> {
-    const sessionId = this.sessionId || `session_${Date.now()}`;
-    if (!this.sessionId) {
-      this.sessionId = sessionId;
-    }
+  private async requestGet(url: string, sessionId: string): Promise<{ html: string; cookies: string[]; userAgent: string }> {
 
     const response = await axios.post(
       this.baseUrl,
