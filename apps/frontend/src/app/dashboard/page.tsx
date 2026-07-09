@@ -36,7 +36,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Tender', value: stats.totalTenders.toLocaleString('id-ID'), sub: `+${stats.newToday} baru hari ini`, icon: '📋' },
+          { label: 'Total Tender', value: (stats.totalTenders ?? 0).toLocaleString('id-ID'), sub: `+${stats.newToday ?? 0} baru hari ini`, icon: '📋' },
           { label: 'Alert Terpantau', value: stats.activeAlerts, sub: `${stats.alertsTriggered} notifikasi terkirim`, icon: '🔔' },
           { label: 'Scraper Uptime', value: `${stats.scraperUptime}%`, sub: `${stats.activeCrawlers} crawler aktif`, icon: '📡' },
           { label: 'Status Platform', value: stats.platformStatus, sub: stats.lastSync ? `Last sync: ${new Date(stats.lastSync).toLocaleString('id-ID')}` : 'No sync data', icon: '⚡', green: stats.platformStatus === 'OPERATIONAL' },

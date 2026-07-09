@@ -14,12 +14,17 @@ export class DashboardController {
   @ApiOperation({ summary: 'Get dashboard statistics for the current tenant' })
   @Get('stats')
   async getStats(@CurrentUser() user: JwtPayload) {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
     const [
       activeAlerts,
       alertsTriggered,
       savedTenders,
       keywordActivity,
       recentTenders,
+      totalTenders,
+      newToday,
     ] = await Promise.all([
       this.prisma.keywordAlert.count({ where: { tenantId: user.tenantId } }),
       this.prisma.notificationLog.count({ where: { tenantId: user.tenantId } }),
@@ -38,6 +43,8 @@ export class DashboardController {
           pagu: true, stage: true, publishedAt: true,
         },
       }),
+      this.prisma.tender.count(),
+      this.prisma.tender.count({ where: { publishedAt: { gte: startOfToday } } }),
     ]);
 
     const crawlers = await this.prisma.lpseSource.findMany({
@@ -84,6 +91,8 @@ export class DashboardController {
     const countMap = new Map(countRows.map((r) => [r.alertId, r._count]));
 
     return {
+      totalTenders,
+      newToday,
       activeAlerts,
       alertsTriggered,
       savedTenders,
